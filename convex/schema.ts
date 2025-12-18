@@ -14,11 +14,11 @@ export default defineSchema({
   // RECEIPT PARSING APP TABLES
   receipts: defineTable({
     // Image info
-    imageID: v.string(), // Convex File ID
+    imageID: v.optional(v.string()), // Convex File ID from Images Relation
     createdAt: v.number(),
 
     // Amounts info
-    totalCents: v.optional(v.number()),
+    subtotalCents: v.optional(v.number()),
     taxCents: v.optional(v.number()),
     tipCents: v.optional(v.number()),
 
@@ -42,6 +42,43 @@ export default defineSchema({
 
   }).index("by_item", ["itemId"]),
 
+  // BillSession - Relations
+  billSession: defineTable({
 
+    hostUserId: v.id("users"),
+    receiptId: v.id("receipts"),
+
+    title: v.string(),
+    createdAt: v.number(),
+
+    status: v.optional(v.string()), // "draft" | "active" | "finalized" | "settled"
+
+    joinCode: v.optional(v.string()), // short code or QR
+    currency: v.optional(v.string()),
+
+  }),
+  billParticipants: defineTable({
+
+    billSessionId: v.id("billSession"),
+    userId: v.id("users"),
+    displayName: v.string(),
+
+    isHost: v.boolean(),
+    joinedAt: v.number(),
+
+    amountOwedCents: v.optional(v.number()),
+    amountPaidCents: v.optional(v.number()),
+
+  }).index("by_bill_session", ["billSessionId"]).index("by_user", ["userId"]),
+
+  // Splitting + Assigning Items - Relations
+  itemClaims: defineTable({
+
+    billSessionId: v.id("billSession"),
+    receiptItemId: v.id("receiptItems"),
+    participantId: v.id("billParticipants"),
+
+    shareFraction: v.number(), // 100%, 50% and etc.
+  }).index("by_item", ["receiptItemId"]).index("by_participant", ["participantId"]),
 
 });
