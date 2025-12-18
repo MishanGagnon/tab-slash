@@ -18,7 +18,7 @@ export default defineSchema({
     createdAt: v.number(),
 
     // Amounts info
-    subtotalCents: v.optional(v.number()),
+    totalCents: v.optional(v.number()),
     taxCents: v.optional(v.number()),
     tipCents: v.optional(v.number()),
 
@@ -32,6 +32,9 @@ export default defineSchema({
     name: v.string(),
     quantity: v.number(),
     priceCents: v.optional(v.number()),
+
+    // Who claimed this item and what percentage
+    claimedBy: v.optional(v.array(v.object({ userId: v.id("users"), claimedPercentage: v.number() }))),
 
   }).index("by_receipt", ["receiptId"]),
   receiptModifiers: defineTable({
@@ -71,14 +74,5 @@ export default defineSchema({
 
   }).index("by_bill_session", ["billSessionId"]).index("by_user", ["userId"]),
 
-  // Splitting + Assigning Items - Relations
-  itemClaims: defineTable({
-
-    billSessionId: v.id("billSession"),
-    receiptItemId: v.id("receiptItems"),
-    participantId: v.id("billParticipants"),
-
-    shareFraction: v.number(), // 100%, 50% and etc.
-  }).index("by_item", ["receiptItemId"]).index("by_participant", ["participantId"]),
 
 });

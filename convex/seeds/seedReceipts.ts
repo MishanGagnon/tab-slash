@@ -1,135 +1,136 @@
-import { mutation } from "../_generated/server";
+import { mutation } from "./_generated/server";
 
 function dollarsToCents(x: number | null | undefined) {
-    if (x === null || x === undefined) {
-        return undefined;
-    }
-    return Math.round(x * 100);
+  if (x === null || x === undefined) return undefined;
+  return Math.round(x * 100);
 }
 
-export const seedReceipt = mutation(async (ctx) => {
-    // Receipt data
-    const receiptId = await ctx.db.insert("receipts", {
-        imageID: "seed-image-id",
-        createdAt: Date.now(),
-        totalCents: dollarsToCents(62.58),
-        taxCents: dollarsToCents(3.75),
-        tipCents: undefined,
-        status: "parsed",
-    });
+export const seedAll = mutation(async (ctx) => {
+  /* ---------------- USERS ---------------- */
+  const hostUserId = await ctx.db.insert("users", {
+    authId: "auth_host_123",
+    name: "Tejas",
+    email: "tejas@example.com",
+    createdAt: Date.now(),
+  });
 
-    // Items and modifiers data
-    const itemsData = [
-        {
-            item_name: "BOGO for $1",
-            price: 1.0,
-            quantity: 1,
-            modifiers: [
-                { modifier_name: "1 McChicken", price: 2.19 },
-                { modifier_name: "1 McChicken", price: null },
-            ],
-        },
-        {
-            item_name: "BOGO for $1",
-            price: 1.0,
-            quantity: 1,
-            modifiers: [
-                { modifier_name: "1 McChicken", price: 2.19 },
-                { modifier_name: "1 McChicken", price: null },
-            ],
-        },
-        {
-            item_name: "BOGO for $1",
-            price: 1.0,
-            quantity: 1,
-            modifiers: [
-                { modifier_name: "1 McChicken", price: 2.19 },
-                { modifier_name: "1 McChicken", price: null },
-            ],
-        },
-        {
-            item_name: "Classic Big Mac Pack",
-            price: 19.99,
-            quantity: 1,
-            modifiers: [
-                { modifier_name: "1 Boxed Bundle", price: null },
-                { modifier_name: "1 BBQ Sauce", price: null },
-                { modifier_name: "2 S&S Sauce", price: null },
-            ],
-        },
-        {
-            item_name: "20 McNuggets",
-            price: 7.29,
-            quantity: 1,
-            modifiers: [
-                { modifier_name: "1 Creamy Ranch Cup", price: null },
-                { modifier_name: "1 Spicy Buffalo Cup", price: null },
-                { modifier_name: "1 Honey Must Cup", price: null },
-            ],
-        },
-        {
-            item_name: "20 McNuggets",
-            price: 7.29,
-            quantity: 1,
-            modifiers: [
-                { modifier_name: "1 Creamy Ranch Cup", price: null },
-                { modifier_name: "2 Honey Must Cup", price: null },
-            ],
-        },
-        {
-            item_name: "Big Mac Ml-Lrg",
-            price: 9.49,
-            quantity: 1,
-            modifiers: [
-                { modifier_name: "L Dr Pepper", price: null },
-            ],
-        },
-        {
-            item_name: "L Coke",
-            price: 3.58,
-            quantity: 2,
-            modifiers: null,
-        },
-        {
-            item_name: "L Fanta Orange",
-            price: 1.79,
-            quantity: 1,
-            modifiers: null,
-        },
-        {
-            item_name: "L Dr Pepper",
-            price: 1.79,
-            quantity: 1,
-            modifiers: null,
-        },
-        {
-            item_name: "L Sweet Iced Tea",
-            price: 1.79,
-            quantity: 1,
-            modifiers: null,
-        },
-    ];
+  const friendUserId = await ctx.db.insert("users", {
+    authId: "auth_friend_456",
+    name: "Alex",
+    email: "alex@example.com",
+    createdAt: Date.now(),
+  });
 
-    // Insert items and their modifiers
-    for (const itemData of itemsData) {
-        const itemId = await ctx.db.insert("receiptItems", {
-            receiptId: receiptId as any,
-            name: itemData.item_name,
-            quantity: itemData.quantity,
-            priceCents: dollarsToCents(itemData.price),
-        });
+  /* ---------------- RECEIPT ---------------- */
+  const receiptId = await ctx.db.insert("receipts", {
+    imageID: "mock-receipt-image",
+    createdAt: Date.now(),
 
-        // Insert modifiers for this item
-        if (itemData.modifiers && itemData.modifiers.length > 0) {
-            for (const modifier of itemData.modifiers) {
-                await ctx.db.insert("receiptModifiers", {
-                    itemId,
-                    name: modifier.modifier_name,
-                    priceCents: dollarsToCents(modifier.price),
-                });
-            }
-        }
-    }
+    totalCents: dollarsToCents(62.58), // subtotal
+    taxCents: dollarsToCents(3.75),
+    tipCents: undefined,
 
-    return receiptId;
-})
+    status: "parsed",
+  });
+
+  /* ---------------- RECEIPT ITEMS ---------------- */
+  const bogoItemId = await ctx.db.insert("receiptItems", {
+    receiptId,
+    name: "BOGO for $1",
+    quantity: 1,
+    priceCents: dollarsToCents(1.0),
+  });
+
+  const bigMacPackItemId = await ctx.db.insert("receiptItems", {
+    receiptId,
+    name: "Classic Big Mac Pack",
+    quantity: 1,
+    priceCents: dollarsToCents(19.99),
+  });
+
+  const nuggetsItemId = await ctx.db.insert("receiptItems", {
+    receiptId,
+    name: "20 McNuggets",
+    quantity: 1,
+    priceCents: dollarsToCents(7.29),
+  });
+
+  /* ---------------- RECEIPT MODIFIERS ---------------- */
+  await ctx.db.insert("receiptModifiers", {
+    itemId: bogoItemId,
+    name: "1 McChicken",
+    priceCents: dollarsToCents(2.19),
+  });
+
+  await ctx.db.insert("receiptModifiers", {
+    itemId: bogoItemId,
+    name: "1 McChicken",
+    priceCents: undefined,
+  });
+
+  await ctx.db.insert("receiptModifiers", {
+    itemId: bigMacPackItemId,
+    name: "1 BBQ Sauce",
+    priceCents: undefined,
+  });
+
+  await ctx.db.insert("receiptModifiers", {
+    itemId: nuggetsItemId,
+    name: "1 Creamy Ranch Cup",
+    priceCents: undefined,
+  });
+
+  /* ---------------- BILL SESSION ---------------- */
+  const billSessionId = await ctx.db.insert("billSession", {
+    hostUserId,
+    receiptId,
+
+    title: "McDonalds with friends",
+    createdAt: Date.now(),
+
+    status: "active",
+    joinCode: "ABCD12",
+    currency: "USD",
+  });
+
+  /* ---------------- PARTICIPANTS ---------------- */
+  const hostParticipantId = await ctx.db.insert("participants", {
+    billSessionId,
+    userId: hostUserId,
+    displayName: "Tejas",
+    isHost: true,
+    amountOwedCents: 0,
+    amountPaidCents: 0,
+  });
+
+  const friendParticipantId = await ctx.db.insert("participants", {
+    billSessionId,
+    userId: friendUserId,
+    displayName: "Alex",
+    isHost: false,
+    amountOwedCents: 0,
+    amountPaidCents: 0,
+  });
+
+  /* ---------------- ITEM CLAIMS ---------------- */
+  await ctx.db.insert("itemClaims", {
+    billSessionId,
+    receiptItemId: bogoItemId,
+    participantId: hostParticipantId,
+    quantity: 1,
+  });
+
+  await ctx.db.insert("itemClaims", {
+    billSessionId,
+    receiptItemId: nuggetsItemId,
+    participantId: friendParticipantId,
+    quantity: 1,
+  });
+
+  return {
+    hostUserId,
+    friendUserId,
+    receiptId,
+    billSessionId,
+  };
+});
