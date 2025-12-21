@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useMutation } from "convex/react";
 import { api } from "../convex/_generated/api";
 import { toast } from "sonner";
+import imageCompression from "browser-image-compression";
 
 export function ImageUpload() {
   const router = useRouter();
@@ -13,6 +14,7 @@ export function ImageUpload() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isCompressing, setIsCompressing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const generateUploadUrl = useMutation(api.image.generateUploadUrl);
@@ -59,11 +61,33 @@ export function ImageUpload() {
 
     try {
       setIsUploading(true);
+      
+      let fileToUpload = selectedFile;
+      
+      // Compress if larger than 1MB
+      if (selectedFile.size > 1024 * 1024) {
+        setIsCompressing(true);
+        try {
+          const options = {
+            maxSizeMB: 1,
+            maxWidthOrHeight: 2048,
+            useWebWorker: true,
+          };
+          fileToUpload = await imageCompression(selectedFile, options);
+          console.log(`Compressed from ${(selectedFile.size / 1024 / 1024).toFixed(2)}MB to ${(fileToUpload.size / 1024 / 1024).toFixed(2)}MB`);
+        } catch (error) {
+          console.error("Compression failed:", error);
+          // Fallback to original file if compression fails
+        } finally {
+          setIsCompressing(false);
+        }
+      }
+
       const postUrl = await generateUploadUrl();
       const result = await fetch(postUrl, {
         method: "POST",
-        headers: { "Content-Type": selectedFile.type },
-        body: selectedFile,
+        headers: { "Content-Type": fileToUpload.type },
+        body: fileToUpload,
       });
 
       if (!result.ok) throw new Error("Upload failed");
@@ -136,7 +160,7 @@ export function ImageUpload() {
                 disabled={isUploading}
                 className="bg-ink text-paper py-3 text-[10px] font-bold uppercase tracking-[0.2em] hover:opacity-90 disabled:opacity-50 transition-all"
               >
-                {isUploading ? "Processing..." : ">> Upload Receipt <<"}
+                {isUploading ? (isCompressing ? "Compressing..." : "Processing...") : ">> Upload Receipt <<"}
               </button>
             </div>
           </div>

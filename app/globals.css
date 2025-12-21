@@ -81,3 +81,45 @@ body {
   align-items: baseline;
   gap: 0.5rem;
 }
+
+/* Sonner Toast Custom Styling */
+.receipt-toast {
+  background-color: var(--paper) !important;
+  color: var(--ink) !important;
+  border: 2px solid var(--ink) !important;
+  border-radius: 0 !important;
+  font-family: var(--font-geist-mono), monospace !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  box-shadow: 4px 4px 0px var(--ink) !important;
+}
+
+.receipt-toast [data-icon] {
+  color: var(--ink) !important;
+}
+
+.receipt-toast [data-button] {
+  background-color: var(--ink) !important;
+  color: var(--paper) !important;
+  border-radius: 0 !important;
+  text-transform: uppercase !important;
+  font-size: 9px !important;
+  font-weight: 900 !important;
+}
+
+/* Success/Error specific overrides while maintaining the theme */
+.receipt-toast[data-type="error"] {
+  border-color: #dc2626 !important;
+  color: #dc2626 !important;
+  box-shadow: 4px 4px 0px #dc2626 !important;
+}
+
+.receipt-toast[data-type="error"] [data-icon] {
+  color: #dc2626 !important;
+}
+
+.receipt-toast[data-type="success"] {
+  border-color: var(--ink) !important;
+}

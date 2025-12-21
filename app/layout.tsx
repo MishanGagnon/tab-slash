@@ -35,7 +35,12 @@ export default function RootLayout({
         >
           <ConvexClientProvider>
             {children}
-            <Toaster position="bottom-center" />
+            <Toaster 
+              position="bottom-center" 
+              toastOptions={{
+                className: "receipt-toast",
+              }}
+            />
           </ConvexClientProvider>
         </body>
       </html>
