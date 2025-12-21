@@ -22,6 +22,7 @@ export default function ReceiptDetailPage() {
   const [parseError, setParseError] = useState<string | null>(null);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isImageCollapsed, setIsImageCollapsed] = useState(false);
 
   const user = useQuery(api.receipt.currentUser);
   const data = useQuery(api.receipt.getReceiptWithItems, { receiptId });
@@ -36,6 +37,16 @@ export default function ReceiptDetailPage() {
   const [shareCode, setShareCode] = useState<string | null>(null);
   const [isGeneratingCode, setIsGeneratingCode] = useState(false);
   const [splittingItemId, setSplittingItemId] = useState<Id<"receiptItems"> | null>(null);
+
+  const isParsed = data?.receipt.status === "parsed";
+  const isCurrentlyParsing = data?.receipt.status === "parsing" || isReparsing;
+
+  // Collapse image once parsed
+  useEffect(() => {
+    if (isParsed) {
+      setIsImageCollapsed(true);
+    }
+  }, [isParsed]);
 
   const handleShareClick = async () => {
     setIsGeneratingCode(true);
@@ -183,8 +194,6 @@ export default function ReceiptDetailPage() {
   }
 
   const { receipt, imageUrl, items } = data;
-  const isParsed = receipt.status === "parsed";
-  const isCurrentlyParsing = receipt.status === "parsing" || isReparsing;
 
   // Check if user needs to join
   const isHost = user && receipt.hostUserId === user._id;
@@ -346,25 +355,41 @@ export default function ReceiptDetailPage() {
 
         {/* Image Section */}
         <div className="flex flex-col gap-4">
-          <div className="border border-ink/20 p-1 bg-paper">
-          <div className="relative aspect-[3/4] w-full">
-            {imageUrl ? (
-              <Image
-                src={imageUrl}
-                alt="Receipt"
-                fill
-                className="object-contain"
-                priority
-              />
-            ) : (
-              <div className="flex items-center justify-center h-full text-[10px] uppercase opacity-30">
-                No Image Found
-              </div>
+          <div className="flex justify-between items-center">
+            <p className="text-[10px] font-bold uppercase tracking-widest opacity-50">
+              {isImageCollapsed ? "--- Image Hidden ---" : "--- Receipt Image ---"}
+            </p>
+            {isParsed && (
+              <button
+                onClick={() => setIsImageCollapsed(!isImageCollapsed)}
+                className="text-[10px] font-bold uppercase underline opacity-50 hover:opacity-100 cursor-pointer"
+              >
+                [ {isImageCollapsed ? "SHOW IMAGE" : "HIDE IMAGE"} ]
+              </button>
             )}
           </div>
-        </div>
+          
+          {!isImageCollapsed && (
+            <div className="border border-ink/20 p-1 bg-paper">
+              <div className="relative aspect-[3/4] w-full">
+                {imageUrl ? (
+                  <Image
+                    src={imageUrl}
+                    alt="Receipt"
+                    fill
+                    className="object-contain"
+                    priority
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-full text-[10px] uppercase opacity-30">
+                    No Image Found
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
-        {parseError && (
+          {parseError && (
           <p className="text-red-600 text-[10px] uppercase font-bold text-center">
             Error: {parseError}
           </p>
