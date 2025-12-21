@@ -25,12 +25,14 @@ export default function ReceiptDetailPage() {
   const data = useQuery(api.receipt.getReceiptWithItems, { receiptId });
   const parseReceipt = useAction(api.receiptActions.triggerParseReceiptByReceiptId);
   const toggleClaim = useMutation(api.receipt.toggleClaimItem);
+  const toggleParticipantClaim = useMutation(api.receipt.toggleParticipantClaim);
   const joinSplit = useMutation(api.receipt.joinReceipt);
   const getOrCreateShareCode = useMutation(api.share.getOrCreateShareCode);
 
   const [isJoining, setIsJoining] = useState(false);
   const [shareCode, setShareCode] = useState<string | null>(null);
   const [isGeneratingCode, setIsGeneratingCode] = useState(false);
+  const [splittingItemId, setSplittingItemId] = useState<Id<"receiptItems"> | null>(null);
 
   const handleShareClick = async () => {
     setIsGeneratingCode(true);
@@ -380,41 +382,77 @@ export default function ReceiptDetailPage() {
                           </span>
                           <span className="font-bold truncate">{item.name}</span>
                           <div className="flex items-center gap-1">
-                            {item.claimedBy?.map((claim, idx) => (
-                              <button
-                                key={idx}
-                                onClick={() =>
-                                  claim.userId === user?._id &&
-                                  toggleClaim({ itemId: item._id })
-                                }
-                                title={claim.userName}
-                                className={`text-[9px] font-black tracking-tighter px-1.5 py-0.5 border-2 ${
-                                  claim.userId === user?._id
-                                    ? "border-ink bg-ink text-paper cursor-pointer"
-                                    : "border-ink/20 text-ink/40 cursor-default"
-                                }`}
-                              >
-                                [ {getInitials(claim.userName)} ]
-                              </button>
-                            ))}
-                            {!isClaimedByUser && (
-                              <button
-                                onClick={() =>
-                                  toggleClaim({ itemId: item._id })
-                                }
-                                className="text-[9px] font-black tracking-tighter px-1.5 py-0.5 border-2 border-dotted border-ink/40 text-ink/60 hover:border-solid hover:border-ink hover:text-ink transition-all"
-                              >
-                                [ CLAIM ]
-                              </button>
-                            )}
+                            <button
+                              onClick={() => toggleClaim({ itemId: item._id })}
+                              className={`text-[9px] font-black tracking-tighter px-1.5 py-0.5 border-2 transition-all ${
+                                isClaimedByUser
+                                  ? "border-ink bg-ink text-paper hover:opacity-90"
+                                  : "border-dotted border-ink/40 text-ink/60 hover:border-solid hover:border-ink hover:text-ink"
+                              }`}
+                            >
+                              {isClaimedByUser ? "[ UNCLAIM ]" : "[ CLAIM ]"}
+                            </button>
+                            <button
+                              onClick={() => setSplittingItemId(splittingItemId === item._id ? null : item._id)}
+                              className={`text-[9px] font-black tracking-tighter px-1.5 py-0.5 border-2 transition-all ${
+                                splittingItemId === item._id
+                                  ? "border-ink bg-ink text-paper"
+                                  : "border-ink/40 text-ink/60 hover:border-ink hover:text-ink"
+                              }`}
+                            >
+                              [ SPLIT ]
+                            </button>
                           </div>
                           <span className="text-right">{formatCurrency(totalItemPriceCents)}</span>
                         </div>
+
                         {item.modifiers && item.modifiers.length > 0 && (
                           <div className="flex flex-col gap-0.5 ml-8 italic opacity-60 text-[10px] uppercase">
                             {item.modifiers.map((mod, idx) => (
                               <div key={idx}>+ {mod.name}</div>
                             ))}
+                          </div>
+                        )}
+
+                        {/* Claimed Names Display */}
+                        {item.claimedBy && item.claimedBy.length > 0 && (
+                          <div className="flex flex-wrap gap-x-2 gap-y-0.5 ml-8 mt-0.5">
+                            <span className="text-[9px] uppercase font-bold opacity-30">Claimed by:</span>
+                            {item.claimedBy.map((claim, idx) => (
+                              <span key={idx} className="text-[9px] uppercase font-bold opacity-60">
+                                {claim.userName}{idx < (item.claimedBy?.length || 0) - 1 ? "," : ""}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Split Selector UI */}
+                        {splittingItemId === item._id && (
+                          <div className="mt-2 ml-8 p-3 border-2 border-dashed border-ink/20 flex flex-col gap-3 bg-paper">
+                            <div className="flex justify-between items-center">
+                              <p className="text-[10px] font-bold uppercase tracking-widest opacity-50">Split With Participants:</p>
+                              <button 
+                                onClick={() => setSplittingItemId(null)}
+                                className="text-[9px] font-black uppercase underline hover:opacity-70"
+                              >
+                                [ DONE ]
+                              </button>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              {receipt.participants?.map((p) => (
+                                <button
+                                  key={p.userId}
+                                  onClick={() => toggleParticipantClaim({ itemId: item._id, userId: p.userId })}
+                                  className={`text-[9px] font-black tracking-tighter px-2 py-1 border-2 transition-all ${
+                                    item.claimedBy?.some(c => c.userId === p.userId)
+                                      ? "border-ink bg-ink text-paper"
+                                      : "border-ink/20 text-ink/40 hover:border-ink/40 hover:text-ink/60"
+                                  }`}
+                                >
+                                  {p.userName}
+                                </button>
+                              ))}
+                            </div>
                           </div>
                         )}
                       </div>

@@ -124,6 +124,45 @@ export const toggleClaimItem = mutation({
 });
 
 /**
+ * Mutation to toggle a specific participant's claim on an item.
+ * Allows one user to split an item among others.
+ */
+export const toggleParticipantClaim = mutation({
+  args: {
+    itemId: v.id("receiptItems"),
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const currentUserId = await getAuthUserId(ctx);
+    if (!currentUserId) {
+      throw new Error("You must be logged in to split items");
+    }
+
+    const item = await ctx.db.get(args.itemId);
+    if (!item) {
+      throw new Error("Item not found");
+    }
+
+    const claimedBy = item.claimedBy || [];
+    const isAlreadyClaimed = claimedBy.includes(args.userId);
+
+    let newClaimedBy: Id<"users">[];
+
+    if (isAlreadyClaimed) {
+      // Unclaim: remove the user from claimedBy
+      newClaimedBy = claimedBy.filter((id) => id !== args.userId);
+    } else {
+      // Claim: add the user to claimedBy
+      newClaimedBy = [...claimedBy, args.userId];
+    }
+
+    await ctx.db.patch(args.itemId, {
+      claimedBy: newClaimedBy.length > 0 ? newClaimedBy : undefined,
+    });
+  },
+});
+
+/**
  * Internal query to get a receipt by ID.
  */
 export const getReceiptById = internalQuery({
