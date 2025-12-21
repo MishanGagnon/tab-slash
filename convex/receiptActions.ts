@@ -12,6 +12,8 @@ import { RECEIPT_PARSING_PROMPT } from "./prompts";
 
 // Zod schema for structured AI output
 const receiptParsingSchema = z.object({
+  merchantName: z.string().optional().describe("Name of the merchant or store"),
+  date: z.string().optional().describe("Date of the receipt as a string"),
   totalCents: z.number().optional().describe("Total amount in cents"),
   taxCents: z.number().optional().describe("Tax amount in cents"),
   tipCents: z.number().optional().describe("Tip amount in cents"),
@@ -95,6 +97,8 @@ export const parseReceipt = internalAction({
     // 5. Store the parsed receipt in the database
     const receiptId = await ctx.runMutation(internal.receipt.createReceiptWithItems, {
       storageId: image.storageId,
+      merchantName: parsedReceipt.merchantName,
+      date: parsedReceipt.date,
       totalCents: parsedReceipt.totalCents,
       taxCents: parsedReceipt.taxCents,
       tipCents: parsedReceipt.tipCents,

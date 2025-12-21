@@ -147,65 +147,71 @@ export default function ReceiptDetailPage() {
               </div>
             </div>
 
-            {/* Parse Button (if not parsed) */}
-            {!isParsed && (
-              <div className="space-y-3">
-                <button
-                  onClick={handleParseReceipt}
-                  disabled={isParsing}
-                  className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-0.5 active:translate-y-0 disabled:transform-none flex items-center justify-center gap-3"
-                >
-                  {isParsing ? (
-                    <>
-                      <svg
-                        className="animate-spin h-5 w-5"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        ></circle>
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        ></path>
-                      </svg>
-                      Parsing with AI...
-                    </>
-                  ) : (
-                    <>
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        strokeWidth={2}
+            {/* Parse / Reparse Button */}
+            <div className="space-y-3">
+              <button
+                onClick={handleParseReceipt}
+                disabled={isParsing}
+                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-0.5 active:translate-y-0 disabled:transform-none flex items-center justify-center gap-3"
+              >
+                {isParsing ? (
+                  <>
+                    <svg
+                      className="animate-spin h-5 w-5"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
                         stroke="currentColor"
-                        className="w-5 h-5"
-                      >
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                    {isParsed ? "Reparsing with AI..." : "Parsing with AI..."}
+                  </>
+                ) : (
+                  <>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth={2}
+                      stroke="currentColor"
+                      className="w-5 h-5"
+                    >
+                      {isParsed ? (
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"
+                        />
+                      ) : (
                         <path
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z"
                         />
-                      </svg>
-                      Parse Receipt with AI
-                    </>
-                  )}
-                </button>
-                {parseError && (
-                  <p className="text-red-500 text-sm text-center">
-                    {parseError}
-                  </p>
+                      )}
+                    </svg>
+                    {isParsed ? "Reparse Receipt with AI" : "Parse Receipt with AI"}
+                  </>
                 )}
-              </div>
-            )}
+              </button>
+              {parseError && (
+                <p className="text-red-500 text-sm text-center">
+                  {parseError}
+                </p>
+              )}
+            </div>
 
             {/* Upload info */}
             <p className="text-sm text-slate-500 dark:text-slate-400 text-center">
@@ -218,31 +224,40 @@ export default function ReceiptDetailPage() {
             {isParsed ? (
               <>
                 {/* Status Badge */}
-                <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      strokeWidth={2}
-                      stroke="currentColor"
-                      className="w-4 h-4 mr-1"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
-                    Parsed
-                  </span>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        strokeWidth={2}
+                        stroke="currentColor"
+                        className="w-4 h-4 mr-1"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      Parsed
+                    </span>
+                  </div>
                 </div>
 
                 {/* Summary Card */}
                 <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-6">
-                  <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-4">
-                    Receipt Summary
-                  </h2>
+                  <div className="flex flex-col mb-4">
+                    <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-200">
+                      {receipt.merchantName || "Receipt Summary"}
+                    </h2>
+                    {receipt.date && (
+                      <p className="text-sm text-slate-500 dark:text-slate-400">
+                        {receipt.date}
+                      </p>
+                    )}
+                  </div>
                   <div className="space-y-3">
                     <div className="flex justify-between items-center py-2 border-b border-slate-100 dark:border-slate-700">
                       <span className="text-slate-600 dark:text-slate-400">
@@ -293,44 +308,44 @@ export default function ReceiptDetailPage() {
                   </h2>
                   {items.length > 0 ? (
                     <div className="space-y-3">
-                      {items.map((item) => (
-                        <div
-                          key={item._id}
-                          className="flex justify-between items-start py-3 border-b border-slate-100 dark:border-slate-700 last:border-b-0"
-                        >
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded">
-                                {item.quantity}x
-                              </span>
-                              <span className="font-medium text-slate-800 dark:text-slate-200">
-                                {item.name}
+                        {items.map((item) => {
+                          const totalItemPriceCents = (item.priceCents || 0) + 
+                            (item.modifiers?.reduce((sum, mod) => sum + (mod.priceCents || 0), 0) || 0);
+                          
+                          return (
+                            <div
+                              key={item._id}
+                              className="flex justify-between items-start py-3 border-b border-slate-100 dark:border-slate-700 last:border-b-0"
+                            >
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded">
+                                    {item.quantity}x
+                                  </span>
+                                  <span className="font-medium text-slate-800 dark:text-slate-200">
+                                    {item.name}
+                                  </span>
+                                </div>
+                                {/* Modifiers */}
+                                {item.modifiers && item.modifiers.length > 0 && (
+                                  <div className="mt-1 ml-10 space-y-1">
+                                    {item.modifiers.map((mod, idx) => (
+                                      <div
+                                        key={idx}
+                                        className="text-sm text-slate-500 dark:text-slate-400"
+                                      >
+                                        <span>+ {mod.name}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                              <span className="font-medium text-slate-800 dark:text-slate-200 ml-4">
+                                {formatCurrency(totalItemPriceCents)}
                               </span>
                             </div>
-                            {/* Modifiers */}
-                            {item.modifiers && item.modifiers.length > 0 && (
-                              <div className="mt-1 ml-10 space-y-1">
-                                {item.modifiers.map((mod, idx) => (
-                                  <div
-                                    key={idx}
-                                    className="flex justify-between text-sm text-slate-500 dark:text-slate-400"
-                                  >
-                                    <span>+ {mod.name}</span>
-                                    {mod.priceCents !== undefined && (
-                                      <span>
-                                        {formatCurrency(mod.priceCents)}
-                                      </span>
-                                    )}
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                          <span className="font-medium text-slate-800 dark:text-slate-200 ml-4">
-                            {formatCurrency(item.priceCents)}
-                          </span>
-                        </div>
-                      ))}
+                          );
+                        })}
                     </div>
                   ) : (
                     <p className="text-slate-500 dark:text-slate-400 text-center py-4">

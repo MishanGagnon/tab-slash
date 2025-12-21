@@ -25,6 +25,10 @@ export default defineSchema({
     taxCents: v.optional(v.number()),
     tipCents: v.optional(v.number()),
 
+    // Merchant and Date info
+    merchantName: v.optional(v.string()),
+    date: v.optional(v.string()),
+
     // Status
     // TODO: consider adding a "pending" status, incase it needs to be reviewed by host
     status: v.string(), // "parsed" | "error" | "paid" 

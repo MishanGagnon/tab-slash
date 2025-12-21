@@ -45,10 +45,13 @@ export const getImageUrl = internalQuery({
 
 /**
  * Internal mutation to create a receipt and its items.
+ * If a receipt already exists for this storageId, it will be replaced.
  */
 export const createReceiptWithItems = internalMutation({
   args: {
     storageId: v.id("_storage"),
+    merchantName: v.optional(v.string()),
+    date: v.optional(v.string()),
     totalCents: v.optional(v.number()),
     taxCents: v.optional(v.number()),
     tipCents: v.optional(v.number()),
@@ -70,10 +73,55 @@ export const createReceiptWithItems = internalMutation({
   },
   returns: v.id("receipts"),
   handler: async (ctx, args) => {
-    // Create the receipt
+    // 1. Check for existing receipt and delete its items
+    const existingReceipt = await ctx.db
+      .query("receipts")
+      .withIndex("by_imageID", (q) => q.eq("imageID", args.storageId))
+      .unique();
+
+    if (existingReceipt) {
+      const existingItems = await ctx.db
+        .query("receiptItems")
+        .withIndex("by_receipt", (q) => q.eq("receiptId", existingReceipt._id))
+        .collect();
+
+      for (const item of existingItems) {
+        await ctx.db.delete(item._id);
+      }
+
+      // Update the existing receipt instead of deleting it to preserve links
+      await ctx.db.patch(existingReceipt._id, {
+        merchantName: args.merchantName,
+        date: args.date,
+        totalCents: args.totalCents,
+        taxCents: args.taxCents,
+        tipCents: args.tipCents,
+        status: "parsed",
+        createdAt: Date.now(),
+      });
+
+      const receiptId = existingReceipt._id;
+
+      // Create new line items
+      for (const item of args.items) {
+        await ctx.db.insert("receiptItems", {
+          receiptId,
+          name: item.name,
+          quantity: item.quantity,
+          priceCents: item.priceCents,
+          modifiers: item.modifiers,
+        });
+      }
+
+      return receiptId;
+    }
+
+    // 2. Create a new receipt if none existed
     const receiptId = await ctx.db.insert("receipts", {
       imageID: args.storageId,
       createdAt: Date.now(),
+      merchantName: args.merchantName,
+      date: args.date,
       totalCents: args.totalCents,
       taxCents: args.taxCents,
       tipCents: args.tipCents,
@@ -107,6 +155,8 @@ export const getReceiptByStorageId = query({
       _id: v.id("receipts"),
       imageID: v.optional(v.id("_storage")),
       createdAt: v.number(),
+      merchantName: v.optional(v.string()),
+      date: v.optional(v.string()),
       totalCents: v.optional(v.number()),
       taxCents: v.optional(v.number()),
       tipCents: v.optional(v.number()),
@@ -126,6 +176,8 @@ export const getReceiptByStorageId = query({
       _id: receipt._id,
       imageID: receipt.imageID,
       createdAt: receipt.createdAt,
+      merchantName: receipt.merchantName,
+      date: receipt.date,
       totalCents: receipt.totalCents,
       taxCents: receipt.taxCents,
       tipCents: receipt.tipCents,
@@ -147,6 +199,8 @@ export const getReceiptWithItems = query({
         _id: v.id("receipts"),
         imageID: v.optional(v.id("_storage")),
         createdAt: v.number(),
+        merchantName: v.optional(v.string()),
+        date: v.optional(v.string()),
         totalCents: v.optional(v.number()),
         taxCents: v.optional(v.number()),
         tipCents: v.optional(v.number()),
@@ -191,6 +245,8 @@ export const getReceiptWithItems = query({
         _id: receipt._id,
         imageID: receipt.imageID,
         createdAt: receipt.createdAt,
+        merchantName: receipt.merchantName,
+        date: receipt.date,
         totalCents: receipt.totalCents,
         taxCents: receipt.taxCents,
         tipCents: receipt.tipCents,
@@ -227,6 +283,8 @@ export const getImageWithReceipt = query({
         v.object({
           _id: v.id("receipts"),
           createdAt: v.number(),
+          merchantName: v.optional(v.string()),
+          date: v.optional(v.string()),
           totalCents: v.optional(v.number()),
           taxCents: v.optional(v.number()),
           tipCents: v.optional(v.number()),
@@ -299,6 +357,8 @@ export const getImageWithReceipt = query({
         ? {
             _id: receipt._id,
             createdAt: receipt.createdAt,
+            merchantName: receipt.merchantName,
+            date: receipt.date,
             totalCents: receipt.totalCents,
             taxCents: receipt.taxCents,
             tipCents: receipt.tipCents,
