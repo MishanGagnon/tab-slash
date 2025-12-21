@@ -12,9 +12,12 @@ export default defineSchema({
   }),
 
   // RECEIPT PARSING APP TABLES
+
+  // Receipts Table
+  // High level receipt info for totals and tips and image
   receipts: defineTable({
     // Image info
-    imageID: v.optional(v.string()), // Convex File ID from Images Relation
+    imageID: v.optional(v.id("_storage")), // Convex File ID from Images Relation
     createdAt: v.number(),
 
     // Amounts info
@@ -26,6 +29,9 @@ export default defineSchema({
     // TODO: consider adding a "pending" status, incase it needs to be reviewed by host
     status: v.string(), // "parsed" | "error" | "paid" 
   }),
+
+  // Receipt Line Items Table
+  // Each line item is a single item on the receipt
   receiptItems: defineTable({
 
     receiptId: v.id("receipts"),
@@ -36,14 +42,11 @@ export default defineSchema({
     // Who claimed this item and what percentage
     claimedBy: v.optional(v.array(v.object({ userId: v.id("users"), claimedPercentage: v.number() }))),
 
+    // Modifiers will be an array on the line itmes
+    modifiers: v.optional(v.array(v.object({ name: v.string(), priceCents: v.optional(v.number()) }))),
+
   }).index("by_receipt", ["receiptId"]),
-  receiptModifiers: defineTable({
 
-    itemId: v.id("receiptItems"),
-    name: v.string(),
-    priceCents: v.optional(v.number()),
-
-  }).index("by_item", ["itemId"]),
 
   // BillSession - Relations
   billSession: defineTable({
@@ -59,20 +62,8 @@ export default defineSchema({
     joinCode: v.optional(v.string()), // short code or QR
     currency: v.optional(v.string()),
 
+    authedParticipants: v.optional(v.array(v.id("users"))),
+    // TODO (priority: low) - add a way to have guest participants 
+
   }),
-  billParticipants: defineTable({
-
-    billSessionId: v.id("billSession"),
-    userId: v.id("users"),
-    displayName: v.string(),
-
-    isHost: v.boolean(),
-    joinedAt: v.number(),
-
-    amountOwedCents: v.optional(v.number()),
-    amountPaidCents: v.optional(v.number()),
-
-  }).index("by_bill_session", ["billSessionId"]).index("by_user", ["userId"]),
-
-
 });
