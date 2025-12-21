@@ -413,37 +413,6 @@ export default function ReceiptDetailPage() {
           </div>
         ) : isParsed ? (
           <div className="flex flex-col gap-6">
-            {/* Summary */}
-            <div className="flex flex-col gap-2">
-              <div className="receipt-item-row text-xs uppercase opacity-70">
-                <span>Subtotal</span>
-                <span>
-                  {formatCurrency(
-                    receipt.totalCents !== undefined &&
-                      receipt.taxCents !== undefined
-                      ? receipt.totalCents -
-                          receipt.taxCents -
-                          (receipt.tipCents || 0)
-                      : undefined
-                  )}
-                </span>
-              </div>
-              <div className="receipt-item-row text-xs uppercase opacity-70">
-                <span>Tax</span>
-                <span>{formatCurrency(receipt.taxCents)}</span>
-              </div>
-              <div className="receipt-item-row text-xs uppercase opacity-70">
-                <span>Tip</span>
-                <span>{formatCurrency(receipt.tipCents)}</span>
-              </div>
-              <div className="receipt-item-row text-lg font-bold uppercase mt-2 border-t-4 border-ink/10 pt-2">
-                <span>Total</span>
-                <span>{formatCurrency(receipt.totalCents)}</span>
-              </div>
-            </div>
-
-            <div className="dotted-line"></div>
-
             {/* Items */}
             <div className="flex flex-col gap-4">
               <h3 className="text-xs font-bold uppercase tracking-widest text-center">
@@ -554,6 +523,37 @@ export default function ReceiptDetailPage() {
                 </p>
               )}
             </div>
+            
+            {/* Summary */}
+            <div className="flex flex-col gap-2">
+              <div className="receipt-item-row text-xs uppercase opacity-70">
+                <span>Subtotal</span>
+                <span>
+                  {formatCurrency(
+                    receipt.totalCents !== undefined &&
+                      receipt.taxCents !== undefined
+                      ? receipt.totalCents -
+                          receipt.taxCents -
+                          (receipt.tipCents || 0)
+                      : undefined
+                  )}
+                </span>
+              </div>
+              <div className="receipt-item-row text-xs uppercase opacity-70">
+                <span>Tax</span>
+                <span>{formatCurrency(receipt.taxCents)}</span>
+              </div>
+              <div className="receipt-item-row text-xs uppercase opacity-70">
+                <span>Tip</span>
+                <span>{formatCurrency(receipt.tipCents)}</span>
+              </div>
+              <div className="receipt-item-row text-lg font-bold uppercase mt-2 border-t-4 border-ink/10 pt-2">
+                <span>Total</span>
+                <span>{formatCurrency(receipt.totalCents)}</span>
+              </div>
+            </div>
+
+            <div className="dotted-line"></div>
           </div>
         ) : (
           <div className="flex flex-col items-center gap-4 py-8 text-center">
@@ -589,8 +589,8 @@ export default function ReceiptDetailPage() {
         <div className="flex flex-col items-center gap-4 text-[10px] uppercase tracking-widest opacity-50 italic text-center">
           <p>*** Thank You for Splitting ***</p>
           <div className="flex flex-col gap-1">
-            <p>Created: {new Date(receipt.createdAt).toLocaleString()}</p>
-            <p>Receipt ID: {receipt._id.slice(0, 12)}...</p>
+            <p><strong>Created:</strong> {new Date(receipt.createdAt).toLocaleString()}</p>
+            <p><strong>Receipt ID:</strong> {receipt._id.slice(0, 12)}...</p>
           </div>
         </div>
       </div>
