@@ -74,8 +74,90 @@ function SignOutButton() {
   );
 }
 
+// function Content() {
+//   const { viewer } = useQuery(api.myFunctions.listNumbers, { count: 1 }) ?? {};
+
+//   if (viewer === undefined) {
+//     return (
+//       <div className="flex flex-col items-center gap-4 py-12">
+//         <div className="flex items-center gap-2">
+//           <p className="animate-pulse text-sm uppercase font-bold">Processing...</p>
+//         </div>
+//       </div>
+//     );
+//   }
+
+//   return (
+//     <div className="flex flex-col gap-8 w-full">
+//       <div className="flex flex-col gap-1 text-center">
+//         <h2 className="font-bold text-sm uppercase tracking-wide">
+//           Welcome, {viewer ?? "Anonymous"}
+//         </h2>
+//         <p className="text-xs opacity-60 leading-relaxed italic">
+//           &quot;Join a friend's split or start a new one below.&quot;
+//         </p>
+//       </div>
+
+//       <div className="dotted-line"></div>
+
+//       <JoinCodeInput />
+
+//       <div className="dotted-line"></div>
+
+//       <div className="flex flex-col gap-4">
+//         <h3 className="text-xs font-bold uppercase tracking-widest text-center">
+//           --- Start a New Split ---
+//         </h3>
+//         <ImageUpload />
+//       </div>
+
+//       <div className="dotted-line"></div>
+
+//       <ReceiptList />
+//     </div>
+//   );
+// }
+
+// function JoinCodeInput() {
+//   const [code, setCode] = useState("");
+//   const router = useRouter();
+
+//   const handleJoin = (e: React.FormEvent) => {
+//     e.preventDefault();
+//     if (code.length === 4) {
+//       router.push(`/join/${code.toUpperCase()}`);
+//     }
+//   };
+
+//   return (
+//     <div className="flex flex-col gap-4">
+//       <h3 className="text-xs font-bold uppercase tracking-widest text-center">
+//         --- Join a Split ---
+//       </h3>
+//       <form onSubmit={handleJoin} className="flex gap-2">
+//         <input
+//           type="text"
+//           value={code}
+//           onChange={(e) => setCode(e.target.value.toUpperCase().slice(0, 4))}
+//           placeholder="ENTER CODE (E.G. TACO)"
+//           className="flex-1 bg-paper border-2 border-ink px-4 py-3 text-xs font-bold uppercase tracking-widest placeholder:opacity-30 focus:outline-none"
+//           maxLength={4}
+//         />
+//         <button
+//           type="submit"
+//           disabled={code.length !== 4}
+//           className="bg-ink text-paper px-6 py-3 text-xs font-bold uppercase tracking-widest hover:opacity-90 transition-all disabled:opacity-50"
+//         >
+//           JOIN
+//         </button>
+//       </form>
+//     </div>
+//   );
+// }
+
 function Content() {
   const { viewer } = useQuery(api.myFunctions.listNumbers, { count: 1 }) ?? {};
+  const [selectedAction, setSelectedAction] = useState<"join" | "start" | null>(null);
 
   if (viewer === undefined) {
     return (
@@ -98,18 +180,15 @@ function Content() {
         </p>
       </div>
 
-      <div className="dotted-line"></div>
+      {/* <div className="dotted-line"></div> */}
 
-      <JoinCodeInput />
-
-      <div className="dotted-line"></div>
-
-      <div className="flex flex-col gap-4">
-        <h3 className="text-xs font-bold uppercase tracking-widest text-center">
-          --- Start a New Split ---
-        </h3>
-        <ImageUpload />
-      </div>
+      {selectedAction === null ? (
+        <ActionChoice onSelect={setSelectedAction} />
+      ) : selectedAction === "join" ? (
+        <JoinSection onBack={() => setSelectedAction(null)} />
+      ) : (
+        <StartSplitSection onBack={() => setSelectedAction(null)} />
+      )}
 
       <div className="dotted-line"></div>
 
@@ -118,7 +197,31 @@ function Content() {
   );
 }
 
-function JoinCodeInput() {
+function ActionChoice({ onSelect }: { onSelect: (action: "join" | "start") => void }) {
+  return (
+    <div className="flex flex-col gap-4">
+      {/* <h3 className="text-xs font-bold uppercase tracking-widest text-center">
+        --- Choose an Action ---
+      </h3> */}
+      <div className="grid grid-cols-2 gap-4">
+        <button
+          onClick={() => onSelect("join")}
+          className="border-2 border-ink py-3 px-3 text-xs font-bold uppercase tracking-[0.2em] hover:bg-ink/10 active:bg-ink/20 transition-all min-h-[44px] touch-manipulation"
+        >
+          [ JOIN SPLIT ]
+        </button>
+        <button
+          onClick={() => onSelect("start")}
+          className="border-2 border-ink py-3 px-3 text-xs font-bold uppercase tracking-[0.2em] hover:bg-ink/10 active:bg-ink/20 transition-all min-h-[44px] touch-manipulation"
+        >
+          [ START SPLIT ]
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function JoinSection({ onBack }: { onBack: () => void }) {
   const [code, setCode] = useState("");
   const router = useRouter();
 
@@ -131,9 +234,17 @@ function JoinCodeInput() {
 
   return (
     <div className="flex flex-col gap-4">
-      <h3 className="text-xs font-bold uppercase tracking-widest text-center">
-        --- Join a Split ---
-      </h3>
+      <div className="flex justify-between items-center">
+        <h3 className="text-xs font-bold uppercase tracking-widest">
+          --- Join a Split ---
+        </h3>
+        <button
+          onClick={onBack}
+          className="text-[10px] font-bold uppercase underline opacity-50 hover:opacity-100 transition-opacity"
+        >
+          [ BACK ]
+        </button>
+      </div>
       <form onSubmit={handleJoin} className="flex gap-2">
         <input
           type="text"
@@ -154,6 +265,26 @@ function JoinCodeInput() {
     </div>
   );
 }
+
+function StartSplitSection({ onBack }: { onBack: () => void }) {
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex justify-between items-center">
+        <h3 className="text-xs font-bold uppercase tracking-widest">
+          --- Start a New Split ---
+        </h3>
+        <button
+          onClick={onBack}
+          className="text-[10px] font-bold uppercase underline opacity-50 hover:opacity-100 transition-opacity"
+        >
+          [ BACK ]
+        </button>
+      </div>
+      <ImageUpload />
+    </div>
+  );
+}
+
 
 function ReceiptList() {
   const receipts = useQuery(api.receipt.listUserReceipts);

@@ -65,10 +65,24 @@ body {
   background-position: 0 0;
 }
 
-.dotted-line {
-  border-top: 2px dotted var(--ink);
+/* .dotted-line {
+  border-top: 2px dashed var(--ink);
   width: 100%;
   margin: 1rem 0;
+} */
+
+.dotted-line {
+  border-top: none;
+  width: 100%;
+  margin: 1rem 0;
+  height: 1.2px;
+  background-image: repeating-linear-gradient(
+    to right,
+    var(--ink) 0,
+    var(--ink) 5px,
+    transparent 5px,
+    transparent 10px
+  );
 }
 
 .receipt-text-center {
