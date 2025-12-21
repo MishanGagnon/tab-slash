@@ -12,27 +12,27 @@ import { RECEIPT_PARSING_PROMPT } from "./prompts";
 
 // Zod schema for structured AI output
 const receiptParsingSchema = z.object({
-  merchantName: z.string().optional().describe("Name of the merchant or store"),
-  date: z.string().optional().describe("Date of the receipt as a string"),
-  totalCents: z.number().optional().describe("Total amount in cents"),
+  merchantName: z.string().optional().describe("Store or restaurant name"),
+  date: z.string().optional().describe("Date on the receipt (as shown)"),
+  totalCents: z.number().optional().describe("Total amount in cents (e.g., $12.50 = 1250)"),
   taxCents: z.number().optional().describe("Tax amount in cents"),
-  tipCents: z.number().optional().describe("Tip amount in cents"),
+  tipCents: z.number().optional().describe("Tip amount in cents (if present)"),
   items: z.array(
     z.object({
-      name: z.string().describe("Name of the item"),
-      quantity: z.number().describe("Quantity of the item"),
-      priceCents: z.number().optional().describe("Price in cents"),
+      name: z.string().describe("Item name"),
+      quantity: z.number().describe("Quantity purchased"),
+      priceCents: z.number().optional().describe("Item price in cents"),
       modifiers: z
         .array(
           z.object({
-            name: z.string().describe("Modifier name"),
-            priceCents: z.number().optional().describe("Modifier price adjustment in cents"),
+            name: z.string().describe("Modifier name (e.g., 'extra cheese')"),
+            priceCents: z.number().optional().describe("Modifier price in cents"),
           })
         )
         .optional()
-        .describe("Item modifiers like extras or customizations"),
+        .describe("Item modifiers or add-ons"),
     })
-  ),
+  ).describe("List of items on the receipt"),
 });
 
 /**
@@ -73,39 +73,58 @@ export const parseReceipt = internalAction({
     const mimeType = response.headers.get("content-type") || "image/jpeg";
 
     // 4. Call Gemini with the image
-    const { object: parsedReceipt } = await generateObject({
-      model: google("gemini-3-flash-preview"),
-      schema: receiptParsingSchema,
-      messages: [
-        { role: "system", content: RECEIPT_PARSING_PROMPT },
-        {
-          role: "user",
-          content: [
-            {
-              type: "image",
-              image: `data:${mimeType};base64,${base64Image}`,
-            },
-            {
-              type: "text",
-              text: "Please parse this receipt and extract all the information.",
-            },
-          ],
-        },
-      ],
-    });
+    let parsedReceipt;
+    try {
+      const result = await generateObject({
+        model: google("gemini-3-flash-preview"),
+        schema: receiptParsingSchema,
+        temperature: 0, // Critical for stable JSON extraction
+        messages: [
+          { role: "system", content: RECEIPT_PARSING_PROMPT },
+          {
+            role: "user",
+            content: [
+              {
+                type: "image",
+                image: `data:${mimeType};base64,${base64Image}`,
+              },
+              {
+                type: "text",
+                text: "Extract all items, prices, and merchant details from this receipt image into the specified JSON format. Convert all prices to cents.",
+              },
+            ],
+          },
+        ],
+      });
+      parsedReceipt = result.object;
+    } catch (error) {
+      console.error("AI Generation Error:", error);
+      throw new Error(`Failed to parse receipt with AI: ${error instanceof Error ? error.message : String(error)}`);
+    }
 
     // 5. Store the parsed receipt in the database
-    const receiptId = await ctx.runMutation(internal.receipt.createReceiptWithItems, {
-      storageId: image.storageId,
-      merchantName: parsedReceipt.merchantName,
-      date: parsedReceipt.date,
-      totalCents: parsedReceipt.totalCents,
-      taxCents: parsedReceipt.taxCents,
-      tipCents: parsedReceipt.tipCents,
-      items: parsedReceipt.items,
-    });
-
-    return receiptId;
+    try {
+      const receiptId = await ctx.runMutation(internal.receipt.createReceiptWithItems, {
+        storageId: image.storageId,
+        merchantName: parsedReceipt.merchantName ?? undefined,
+        date: parsedReceipt.date ?? undefined,
+        totalCents: parsedReceipt.totalCents ?? undefined,
+        taxCents: parsedReceipt.taxCents ?? undefined,
+        tipCents: parsedReceipt.tipCents ?? undefined,
+        items: parsedReceipt.items.map(item => ({
+          ...item,
+          priceCents: item.priceCents ?? undefined,
+          modifiers: item.modifiers?.map(m => ({
+            ...m,
+            priceCents: m.priceCents ?? undefined,
+          })) ?? undefined,
+        })),
+      });
+      return receiptId;
+    } catch (error) {
+      console.error("Database Storage Error:", error);
+      throw new Error(`Failed to store parsed receipt: ${error instanceof Error ? error.message : String(error)}`);
+    }
   },
 });
 

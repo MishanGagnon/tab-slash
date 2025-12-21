@@ -113,26 +113,26 @@ export function ImageUpload() {
   };
 
   return (
-    <div className="flex flex-col gap-12 w-full max-w-4xl mx-auto p-4">
+    <div className="flex flex-col gap-12 w-full max-w-4xl mx-auto">
       {/* Upload Section */}
-      <div className="flex flex-col gap-6 max-w-xl mx-auto w-full">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-2">
-            Upload your bill
+      <div className="flex flex-col gap-6 w-full">
+        <div className="text-center space-y-2">
+          <h2 className="text-lg font-bold uppercase tracking-widest">
+            *** Upload Bill ***
           </h2>
-          <p className="text-slate-600 dark:text-slate-400">
-            Upload an image of your receipt to start splitting the bill.
+          <p className="text-xs uppercase opacity-70">
+            Submit receipt for digital transcription
           </p>
         </div>
 
         <div
-          className={`relative border-2 border-dashed rounded-2xl p-8 transition-all duration-200 flex flex-col items-center justify-center min-h-[300px] cursor-pointer
+          className={`relative border-2 border-dotted p-8 transition-all duration-200 flex flex-col items-center justify-center min-h-[250px] cursor-pointer
             ${
               isDragging
-                ? "border-blue-500 bg-blue-50/50 dark:bg-blue-900/20 shadow-inner"
-                : "border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600 bg-slate-50 dark:bg-slate-900/50"
+                ? "bg-ink/5 border-ink"
+                : "border-ink/30 hover:border-ink/60"
             }
-            ${selectedImage ? "border-solid border-slate-200 dark:border-slate-800" : ""}
+            ${selectedImage ? "border-solid border-ink/20" : ""}
           `}
           onDragOver={onDragOver}
           onDragLeave={onDragLeave}
@@ -149,7 +149,7 @@ export function ImageUpload() {
 
           {selectedImage ? (
             <div className="relative w-full h-full flex flex-col items-center">
-              <div className="relative w-full aspect-[4/3] rounded-lg overflow-hidden border border-slate-200 dark:border-slate-800 shadow-sm">
+              <div className="relative w-full aspect-[4/3] overflow-hidden border border-ink/20">
                 <Image
                   src={selectedImage}
                   alt="Selected receipt"
@@ -163,21 +163,21 @@ export function ImageUpload() {
                   clearImage();
                 }}
                 disabled={isUploading}
-                className="mt-4 text-sm font-medium text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 transition-colors disabled:opacity-50"
+                className="mt-4 text-xs font-bold uppercase underline hover:opacity-70 transition-opacity disabled:opacity-50"
               >
-                Remove image and try another
+                [ REMOVE AND RETRY ]
               </button>
             </div>
           ) : (
-            <div className="flex flex-col items-center gap-4">
-              <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center mb-2">
+            <div className="flex flex-col items-center gap-4 text-center">
+              <div className="w-12 h-12 border-2 border-ink/30 rounded-full flex items-center justify-center mb-2">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"
                   viewBox="0 0 24 24"
                   strokeWidth={1.5}
                   stroke="currentColor"
-                  className="w-8 h-8"
+                  className="w-6 h-6 opacity-50"
                 >
                   <path
                     strokeLinecap="round"
@@ -186,15 +186,15 @@ export function ImageUpload() {
                   />
                 </svg>
               </div>
-              <div className="text-center">
-                <p className="text-lg font-semibold text-slate-700 dark:text-slate-300">
-                  Click to upload or drag and drop
+              <div className="space-y-1">
+                <p className="text-sm font-bold uppercase tracking-tight">
+                  Drop Receipt Image Here
                 </p>
-                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                  PNG, JPG or WEBP (max. 10MB)
+                <p className="text-[10px] uppercase opacity-50">
+                  PNG, JPG, WEBP (MAX 10MB)
                 </p>
               </div>
-              <button className="mt-4 bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900 px-6 py-2 rounded-lg font-medium shadow-sm hover:shadow-md transition-all">
+              <button className="mt-4 border-2 border-ink px-4 py-1 text-xs font-bold uppercase tracking-tighter hover:bg-ink hover:text-paper transition-all">
                 Select File
               </button>
             </div>
@@ -203,46 +203,48 @@ export function ImageUpload() {
 
         {selectedImage && (
           <button
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:transform-none"
+            className="w-full bg-ink text-paper font-bold py-3 uppercase tracking-[0.2em] hover:opacity-90 transition-all disabled:opacity-50"
             onClick={handleUpload}
             disabled={isUploading}
           >
-            {isUploading ? "Uploading..." : "Process Bill"}
+            {isUploading ? "Uploading..." : ">> Process Receipt <<"}
           </button>
         )}
       </div>
 
+      <div className="dotted-line"></div>
+
       {/* Viewing Section */}
       {images && images.length > 0 && (
         <div className="w-full">
-          <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-6">
-            Your Uploaded Bills
+          <h3 className="text-sm font-bold uppercase tracking-widest mb-6 text-center">
+            --- History ---
           </h3>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
-            Click on a receipt to view details and parse it
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-2 gap-4">
             {images.map((img) => (
               <Link
                 key={img.id}
                 href={`/receipts/${img.id}`}
-                className="group relative aspect-[3/4] rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 shadow-sm hover:shadow-lg hover:border-blue-400 dark:hover:border-blue-500 transition-all cursor-pointer"
+                className="group relative aspect-[3/4] border border-ink/20 hover:border-ink transition-all cursor-pointer bg-paper p-1"
               >
                 {img.url && (
-                  <Image
-                    src={img.url}
-                    alt="Uploaded bill"
-                    fill
-                    className="object-cover"
-                  />
+                  <div className="relative w-full h-full border border-ink/10 overflow-hidden">
+                    <Image
+                      src={img.url}
+                      alt="Uploaded bill"
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
                 )}
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all duration-200" />
+                
                 {/* View indicator */}
-                <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                  <span className="text-white text-sm font-medium">
-                    View Receipt →
+                <div className="absolute inset-0 flex items-center justify-center bg-paper/80 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                  <span className="text-[10px] font-bold uppercase tracking-tighter border-2 border-ink px-2 py-1">
+                    [ View ]
                   </span>
                 </div>
+
                 {/* Delete button */}
                 <button
                   onClick={(e) => {
@@ -250,23 +252,10 @@ export function ImageUpload() {
                     e.stopPropagation();
                     handleDelete(img.id as Id<"images">);
                   }}
-                  className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-red-600 shadow-lg z-10"
-                  title="Delete image"
+                  className="absolute top-2 right-2 w-6 h-6 bg-paper border border-ink flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-ink hover:text-paper z-10"
+                  title="Delete"
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth={2}
-                    stroke="currentColor"
-                    className="w-4 h-4"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
+                  <span className="text-xs font-bold leading-none">×</span>
                 </button>
               </Link>
             ))}
