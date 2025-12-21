@@ -11,11 +11,11 @@ import { toast } from "sonner";
 export default function PersonalReceiptPage() {
   const params = useParams();
   const router = useRouter();
-  const receiptImageId = params.id as Id<"images">;
+  const receiptId = params.id as Id<"receipts">;
   const targetUserId = params.userId as Id<"users">;
 
   const user = useQuery(api.receipt.currentUser);
-  const data = useQuery(api.receipt.getImageWithReceipt, { imageId: receiptImageId });
+  const data = useQuery(api.receipt.getReceiptWithItems, { receiptId });
 
   // Format cents to dollars
   const formatCurrency = (cents: number | undefined) => {
@@ -57,7 +57,7 @@ export default function PersonalReceiptPage() {
       <div className="min-h-screen bg-background py-12 px-4 flex justify-center">
         <div className="w-full max-w-lg receipt-paper jagged-top jagged-bottom p-8 flex flex-col items-center gap-6">
           <Link
-            href={`/receipts/${receiptImageId}`}
+            href={`/receipts/${receiptId}`}
             className="self-start text-[10px] font-bold uppercase underline opacity-50 hover:opacity-100 mb-4"
           >
             [ {"<<"} BACK TO RECEIPT ]
@@ -107,14 +107,14 @@ export default function PersonalReceiptPage() {
         <div className="flex flex-col items-center gap-2">
           <div className="w-full flex justify-between items-center mb-4">
             <Link
-              href={`/receipts/${receiptImageId}`}
+              href={`/receipts/${receiptId}`}
               className="text-[10px] font-bold uppercase underline opacity-50 hover:opacity-100"
             >
               [ {"<<"} BACK TO FULL RECEIPT ]
             </Link>
             <button
               onClick={() => {
-                const url = `${getBaseUrl()}/receipts/${receiptImageId}/${targetUserId}`;
+                const url = `${getBaseUrl()}/receipts/${receiptId}/${targetUserId}`;
                 navigator.clipboard.writeText(url);
                 toast.success("Personal statement link copied!");
               }}
@@ -222,4 +222,3 @@ export default function PersonalReceiptPage() {
     </div>
   );
 }
-

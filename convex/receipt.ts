@@ -5,6 +5,40 @@ import { auth } from "./auth";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
 /**
+ * Create an image record and a draft receipt in one transaction.
+ * Returns the receipt ID for routing.
+ */
+export const createImageWithDraftReceipt = mutation({
+  args: {
+    storageId: v.id("_storage"),
+  },
+  returns: v.id("receipts"),
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("Unauthorized");
+    }
+
+    // Create the image record
+    const imageId = await ctx.db.insert("images", {
+      storageId: args.storageId,
+      uploadedBy: userId,
+      uploadedAt: Date.now(),
+    });
+
+    // Create a draft receipt
+    const receiptId = await ctx.db.insert("receipts", {
+      imageID: args.storageId,
+      hostUserId: userId,
+      createdAt: Date.now(),
+      status: "draft",
+    });
+
+    return receiptId;
+  },
+});
+
+/**
  * Get the current authenticated user.
  */
 export const currentUser = query({
@@ -86,6 +120,65 @@ export const toggleClaimItem = mutation({
         claimedBy: undefined,
       });
     }
+  },
+});
+
+/**
+ * Internal query to get a receipt by ID.
+ */
+export const getReceiptById = internalQuery({
+  args: {
+    receiptId: v.id("receipts"),
+  },
+  returns: v.union(
+    v.object({
+      _id: v.id("receipts"),
+      imageID: v.optional(v.id("_storage")),
+      hostUserId: v.id("users"),
+      status: v.string(),
+    }),
+    v.null()
+  ),
+  handler: async (ctx, args) => {
+    const receipt = await ctx.db.get(args.receiptId);
+    if (!receipt) return null;
+    return {
+      _id: receipt._id,
+      imageID: receipt.imageID,
+      hostUserId: receipt.hostUserId,
+      status: receipt.status,
+    };
+  },
+});
+
+/**
+ * Internal query to get an image by storage ID.
+ */
+export const getImageByStorageId = internalQuery({
+  args: {
+    storageId: v.id("_storage"),
+  },
+  returns: v.union(
+    v.object({
+      _id: v.id("images"),
+      storageId: v.id("_storage"),
+      uploadedBy: v.id("users"),
+      uploadedAt: v.number(),
+    }),
+    v.null()
+  ),
+  handler: async (ctx, args) => {
+    const image = await ctx.db
+      .query("images")
+      .filter(q => q.eq(q.field("storageId"), args.storageId))
+      .first();
+    if (!image) return null;
+    return {
+      _id: image._id,
+      storageId: image.storageId,
+      uploadedBy: image.uploadedBy,
+      uploadedAt: image.uploadedAt,
+    };
   },
 });
 
@@ -410,6 +503,7 @@ export const getReceiptWithItems = query({
         })
       ),
       imageUrl: v.union(v.string(), v.null()),
+      imageTableId: v.union(v.id("images"), v.null()),
     }),
     v.null()
   ),
@@ -462,8 +556,17 @@ export const getReceiptWithItems = query({
     );
 
     let imageUrl: string | null = null;
+    let imageTableId: Id<"images"> | null = null;
     if (receipt.imageID) {
       imageUrl = await ctx.storage.getUrl(receipt.imageID);
+      // Find the images table record for this storageId
+      const imageRecord = await ctx.db
+        .query("images")
+        .filter(q => q.eq(q.field("storageId"), receipt.imageID))
+        .first();
+      if (imageRecord) {
+        imageTableId = imageRecord._id;
+      }
     }
 
     return {
@@ -486,6 +589,7 @@ export const getReceiptWithItems = query({
       },
       items: itemsWithUserNames,
       imageUrl,
+      imageTableId,
     };
   },
 });

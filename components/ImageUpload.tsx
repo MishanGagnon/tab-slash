@@ -16,7 +16,7 @@ export function ImageUpload() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const generateUploadUrl = useMutation(api.image.generateUploadUrl);
-  const writeImage = useMutation(api.image.writeImage);
+  const createImageWithDraftReceipt = useMutation(api.receipt.createImageWithDraftReceipt);
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -69,11 +69,11 @@ export function ImageUpload() {
       if (!result.ok) throw new Error("Upload failed");
 
       const { storageId } = await result.json();
-      const imageId = await writeImage({ storageId });
+      const receiptId = await createImageWithDraftReceipt({ storageId });
       
       clearImage();
       toast.success("Receipt uploaded successfully!");
-      router.push(`/receipts/${imageId}`);
+      router.push(`/receipts/${receiptId}`);
     } catch (error) {
       console.error("Upload failed:", error);
       toast.error("Failed to upload receipt");

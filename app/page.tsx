@@ -133,7 +133,7 @@ function ReceiptList() {
           {receipts.map((receipt) => (
             <Link
               key={receipt._id}
-              href={receipt.imageId ? `/receipts/${receipt.imageId}` : "#"}
+              href={`/receipts/${receipt._id}`}
               className="flex flex-col gap-1 group"
             >
               <div className="flex justify-between items-baseline">

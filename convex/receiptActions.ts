@@ -159,3 +159,51 @@ export const triggerParseReceipt = action({
   },
 });
 
+/**
+ * Public action to trigger receipt parsing by receipt ID.
+ * Looks up the image from the receipt and triggers parsing.
+ */
+export const triggerParseReceiptByReceiptId = action({
+  args: {
+    receiptId: v.id("receipts"),
+  },
+  returns: v.id("receipts"),
+  handler: async (ctx, args): Promise<Id<"receipts">> => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("Unauthorized");
+    }
+
+    // Get the receipt to find its imageID (storageId)
+    const receiptData = await ctx.runQuery(internal.receipt.getReceiptById, {
+      receiptId: args.receiptId,
+    });
+
+    if (!receiptData) {
+      throw new Error("Receipt not found");
+    }
+
+    // Verify the user is the host
+    if (receiptData.hostUserId !== userId) {
+      throw new Error("Unauthorized: You don't own this receipt");
+    }
+
+    if (!receiptData.imageID) {
+      throw new Error("Receipt has no associated image");
+    }
+
+    // Find the image record by storageId
+    const image = await ctx.runQuery(internal.receipt.getImageByStorageId, {
+      storageId: receiptData.imageID,
+    });
+
+    if (!image) {
+      throw new Error("Image record not found");
+    }
+
+    return await ctx.runAction(internal.receiptActions.parseReceipt, {
+      imageId: image._id,
+    });
+  },
+});
+

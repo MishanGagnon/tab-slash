@@ -9,19 +9,21 @@ import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
 import { getBaseUrl } from "@/lib/utils";
 import { toast } from "sonner";
+import { ShareModal } from "@/components/ShareModal";
 
 export default function ReceiptDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const imageId = params.id as Id<"images">;
+  const receiptId = params.id as Id<"receipts">;
 
   const [isParsing, setIsParsing] = useState(false);
   const [parseError, setParseError] = useState<string | null>(null);
   const [timer, setTimer] = useState(0);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   const user = useQuery(api.receipt.currentUser);
-  const data = useQuery(api.receipt.getImageWithReceipt, { imageId });
-  const parseReceipt = useAction(api.receiptActions.triggerParseReceipt);
+  const data = useQuery(api.receipt.getReceiptWithItems, { receiptId });
+  const parseReceipt = useAction(api.receiptActions.triggerParseReceiptByReceiptId);
   const toggleClaim = useMutation(api.receipt.toggleClaimItem);
   const joinSplit = useMutation(api.receipt.joinReceipt);
 
@@ -38,7 +40,7 @@ export default function ReceiptDetailPage() {
     }, 100);
 
     try {
-      await parseReceipt({ imageId });
+      await parseReceipt({ receiptId });
     } catch (error) {
       console.error("Failed to parse receipt:", error);
       setParseError(
@@ -128,18 +130,18 @@ export default function ReceiptDetailPage() {
     );
   }
 
-  const { image, imageUrl, receipt, items } = data;
-  const isParsed = receipt !== null;
+  const { receipt, imageUrl, items } = data;
+  const isParsed = receipt.status === "parsed";
 
   // Check if user needs to join
-  const isHost = user && receipt && receipt.hostUserId === user._id;
-  const isParticipant = user && receipt && receipt.authedParticipants?.includes(user._id);
-  const needsToJoin = user && receipt && !isHost && !isParticipant;
+  const isHost = user && receipt.hostUserId === user._id;
+  const isParticipant = user && receipt.authedParticipants?.includes(user._id);
+  const needsToJoin = user && isParsed && !isHost && !isParticipant;
 
   const handleJoin = async () => {
     setIsJoining(true);
     try {
-      await joinSplit({ receiptId: receipt!._id });
+      await joinSplit({ receiptId: receipt._id });
     } catch (error) {
       console.error("Failed to join split:", error);
     } finally {
@@ -149,6 +151,14 @@ export default function ReceiptDetailPage() {
 
   return (
     <div className="min-h-screen bg-background py-12 px-4 flex justify-center">
+      {/* Share Modal */}
+      <ShareModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        url={`${getBaseUrl()}/receipts/${receiptId}`}
+        shareCode="ABCD"
+      />
+
       {/* Join Modal */}
       {needsToJoin && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
@@ -193,25 +203,21 @@ export default function ReceiptDetailPage() {
                 [ {"<<"} BACK ]
               </Link>
               <button
-                onClick={() => {
-                  const url = `${getBaseUrl()}/receipts/${imageId}`;
-                  navigator.clipboard.writeText(url);
-                  toast.success("Share link copied to clipboard!");
-                }}
+                onClick={() => setIsShareModalOpen(true)}
                 className="text-[10px] font-bold uppercase underline opacity-50 hover:opacity-100 cursor-pointer"
               >
-                [ COPY SHARE LINK ]
+                [ SHARE ]
               </button>
             </div>
             <h1 className="text-xl font-bold uppercase tracking-[0.2em] text-center">
-              {receipt?.merchantName || "Transaction Details"}
+              {receipt.merchantName || "Transaction Details"}
             </h1>
-          {receipt?.date && (
+          {receipt.date && (
             <p className="text-xs uppercase tracking-widest opacity-70">
               {receipt.date}
             </p>
           )}
-          {receipt?.participants && receipt.participants.length > 0 && (
+          {receipt.participants && receipt.participants.length > 0 && (
             <div className="flex flex-wrap justify-center gap-2 mt-2">
               {receipt.participants.map((p, idx) => (
                 <div
@@ -418,7 +424,7 @@ export default function ReceiptDetailPage() {
         {isParsed && user && (
           <div className="flex flex-col gap-4 mt-4">
             <Link
-              href={`/receipts/${imageId}/${user._id}`}
+              href={`/receipts/${receiptId}/${user._id}`}
               className="w-full border-2 border-ink py-3 text-xs font-bold uppercase tracking-[0.2em] text-center hover:bg-ink hover:text-paper transition-all"
             >
               {">> View Your Personal Receipt <<"}
@@ -432,12 +438,11 @@ export default function ReceiptDetailPage() {
         <div className="flex flex-col items-center gap-4 text-[10px] uppercase tracking-widest opacity-50 italic text-center">
           <p>*** Thank You for Splitting ***</p>
           <div className="flex flex-col gap-1">
-            <p>Uploaded: {new Date(image.uploadedAt).toLocaleString()}</p>
-            <p>Receipt ID: {image._id.slice(0, 12)}...</p>
+            <p>Created: {new Date(receipt.createdAt).toLocaleString()}</p>
+            <p>Receipt ID: {receipt._id.slice(0, 12)}...</p>
           </div>
         </div>
       </div>
     </div>
   );
 }
-
