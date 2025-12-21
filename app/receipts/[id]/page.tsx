@@ -15,6 +15,7 @@ export default function ReceiptDetailPage() {
 
   const [isParsing, setIsParsing] = useState(false);
   const [parseError, setParseError] = useState<string | null>(null);
+  const [timer, setTimer] = useState(0);
 
   const data = useQuery(api.receipt.getImageWithReceipt, { imageId });
   const parseReceipt = useAction(api.receiptActions.triggerParseReceipt);
@@ -22,6 +23,13 @@ export default function ReceiptDetailPage() {
   const handleParseReceipt = async () => {
     setIsParsing(true);
     setParseError(null);
+    setTimer(0);
+
+    const startTime = performance.now();
+    const interval = setInterval(() => {
+      setTimer((performance.now() - startTime) / 1000);
+    }, 100);
+
     try {
       await parseReceipt({ imageId });
     } catch (error) {
@@ -30,6 +38,7 @@ export default function ReceiptDetailPage() {
         error instanceof Error ? error.message : "Failed to parse receipt"
       );
     } finally {
+      clearInterval(interval);
       setIsParsing(false);
     }
   };
@@ -43,23 +52,27 @@ export default function ReceiptDetailPage() {
   // Loading state
   if (data === undefined) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-8">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex items-center justify-center py-20">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"></div>
-              <div
-                className="w-2 h-2 bg-slate-500 rounded-full animate-bounce"
-                style={{ animationDelay: "0.1s" }}
-              ></div>
-              <div
-                className="w-2 h-2 bg-slate-600 rounded-full animate-bounce"
-                style={{ animationDelay: "0.2s" }}
-              ></div>
-              <p className="ml-2 text-slate-600 dark:text-slate-400">
-                Loading receipt...
-              </p>
-            </div>
+      <div className="min-h-screen bg-background py-12 px-4 flex justify-center">
+        <div className="w-full max-w-lg receipt-paper jagged-top jagged-bottom p-8 flex flex-col items-center justify-center min-h-[400px]">
+          <div className="flex flex-col items-center gap-4 animate-pulse">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="animate-spin opacity-50"
+            >
+              <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
+            <p className="text-xs uppercase font-bold tracking-widest opacity-50">
+              Loading Transaction...
+            </p>
           </div>
         </div>
       </div>
@@ -69,20 +82,28 @@ export default function ReceiptDetailPage() {
   // Not found state
   if (data === null) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-8">
-        <div className="max-w-4xl mx-auto text-center py-20">
-          <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-200 mb-4">
-            Receipt Not Found
-          </h1>
-          <p className="text-slate-600 dark:text-slate-400 mb-6">
-            The receipt you&apos;re looking for doesn&apos;t exist or has been
-            deleted.
-          </p>
+      <div className="min-h-screen bg-background py-12 px-4 flex justify-center">
+        <div className="w-full max-w-lg receipt-paper jagged-top jagged-bottom p-8 flex flex-col items-center gap-6">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+            className="self-start text-[10px] font-bold uppercase underline opacity-50 hover:opacity-100 mb-4"
           >
-            ← Back to home
+            [ &lt;&lt; BACK ]
+          </Link>
+          <div className="text-center space-y-4 py-12">
+            <h1 className="text-xl font-bold uppercase tracking-widest">
+              Receipt Not Found
+            </h1>
+            <p className="text-xs uppercase opacity-60 leading-relaxed">
+              The requested document could not be located in our records.
+            </p>
+          </div>
+          <div className="dotted-line"></div>
+          <Link
+            href="/"
+            className="border-2 border-ink px-6 py-2 text-xs font-bold uppercase tracking-widest hover:bg-ink hover:text-paper transition-all"
+          >
+            Return to Terminal
           </Link>
         </div>
       </div>
@@ -134,22 +155,41 @@ export default function ReceiptDetailPage() {
             </div>
           </div>
 
-          <button
-            onClick={handleParseReceipt}
-            disabled={isParsing}
-            className="w-full border-2 border-ink py-3 text-xs font-bold uppercase tracking-[0.2em] hover:bg-ink hover:text-paper transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-          >
-            {isParsing ? (
-              <>
-                <span className="animate-spin text-lg">⚙</span>
-                {isParsed ? "Reparsing..." : "Parsing..."}
-              </>
-            ) : (
-              <>
-                {isParsed ? ">> Reparse Receipt <<" : ">> Parse Receipt <<"}
-              </>
-            )}
-          </button>
+          <div className="flex flex-col gap-2">
+            <button
+              onClick={handleParseReceipt}
+              disabled={isParsing}
+              className="w-full border-2 border-ink py-3 text-xs font-bold uppercase tracking-[0.2em] hover:bg-ink hover:text-paper transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {isParsing ? (
+                <>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="animate-spin"
+                  >
+                    <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                  {isParsed ? "Reparsing..." : "Parsing..."} ({timer.toFixed(1)}s)
+                </>
+              ) : (
+                <>
+                  {isParsed ? ">> Reparse Receipt <<" : ">> Parse Receipt <<"}
+                </>
+              )}
+            </button>
+            <p className="text-[10px] uppercase opacity-40 text-center italic">
+              Note: This usually takes about 30 seconds
+            </p>
+          </div>
           {parseError && (
             <p className="text-red-600 text-[10px] uppercase font-bold text-center">
               Error: {parseError}

@@ -12,7 +12,8 @@ export const RECEIPT_PARSING_PROMPT = `You are an intelligent multi-step receipt
    - If a value is missing, use null or omit the field if optional.
 
 2. **Item & Modifier Extraction**:
-   - Treat indented or offset lines as modifiers of their parent item.
+   - It's critical that you are super aware of indentations and line breaks when extracting items and modifiers.
+   - Treat indented or offset lines as modifiers of their parent item. (again be aware of indentations and line breaks)
    - Keep names simple and human-readable.
    - **Creative Naming**: You can combine parent items with single modifiers into a single name if it makes sense (e.g., "Quesadilla" + "Chicken" modifier -> "Chicken Quesadilla"), especially if the modifier has no separate cost.
    - However, keep modifiers separate if they are needed to differentiate between multiple orders of the same type.
