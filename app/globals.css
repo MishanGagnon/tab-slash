@@ -81,10 +81,3 @@ body {
   align-items: baseline;
   gap: 0.5rem;
 }
-
-.receipt-item-dots {
-  flex: 1;
-  border-bottom: 2px dotted var(--ink);
-  height: 1px;
-  margin-bottom: 0.25rem;
-}

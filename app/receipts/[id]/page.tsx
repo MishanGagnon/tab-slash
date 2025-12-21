@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { useQuery, useAction } from "convex/react";
+import { useQuery, useAction, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
 
@@ -17,8 +17,10 @@ export default function ReceiptDetailPage() {
   const [parseError, setParseError] = useState<string | null>(null);
   const [timer, setTimer] = useState(0);
 
+  const user = useQuery(api.receipt.currentUser);
   const data = useQuery(api.receipt.getImageWithReceipt, { imageId });
   const parseReceipt = useAction(api.receiptActions.triggerParseReceipt);
+  const toggleClaim = useMutation(api.receipt.toggleClaimItem);
 
   const handleParseReceipt = async () => {
     setIsParsing(true);
@@ -47,6 +49,17 @@ export default function ReceiptDetailPage() {
   const formatCurrency = (cents: number | undefined) => {
     if (cents === undefined) return "—";
     return `$${(cents / 100).toFixed(2)}`;
+  };
+
+  // Helper to get initials
+  const getInitials = (name: string | undefined) => {
+    if (!name) return "??";
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
   };
 
   // Loading state
@@ -206,7 +219,6 @@ export default function ReceiptDetailPage() {
             <div className="flex flex-col gap-2">
               <div className="receipt-item-row text-xs uppercase opacity-70">
                 <span>Subtotal</span>
-                <div className="receipt-item-dots"></div>
                 <span>
                   {formatCurrency(
                     receipt.totalCents !== undefined &&
@@ -220,17 +232,14 @@ export default function ReceiptDetailPage() {
               </div>
               <div className="receipt-item-row text-xs uppercase opacity-70">
                 <span>Tax</span>
-                <div className="receipt-item-dots"></div>
                 <span>{formatCurrency(receipt.taxCents)}</span>
               </div>
               <div className="receipt-item-row text-xs uppercase opacity-70">
                 <span>Tip</span>
-                <div className="receipt-item-dots"></div>
                 <span>{formatCurrency(receipt.tipCents)}</span>
               </div>
-              <div className="receipt-item-row text-lg font-bold uppercase mt-2">
+              <div className="receipt-item-row text-lg font-bold uppercase mt-2 border-t-4 border-ink/10 pt-2">
                 <span>Total</span>
-                <div className="receipt-item-dots border-ink/50 border-b-4"></div>
                 <span>{formatCurrency(receipt.totalCents)}</span>
               </div>
             </div>
@@ -252,18 +261,50 @@ export default function ReceiptDetailPage() {
                         0
                       ) || 0);
 
+                    const isClaimedByUser = item.claimedBy?.some(
+                      (c) => c.userId === user?._id
+                    );
+
                     return (
                       <div key={item._id} className="flex flex-col gap-1">
-                        <div className="receipt-item-row text-xs uppercase">
-                          <span className="flex-shrink-0 mr-2 opacity-60">
+                        <div className="grid grid-cols-[1.5rem_1fr_auto_4.5rem] gap-2 items-center text-xs uppercase">
+                          <span className="flex-shrink-0 opacity-60">
                             {item.quantity}X
                           </span>
-                          <span className="font-bold">{item.name}</span>
-                          <div className="receipt-item-dots"></div>
-                          <span>{formatCurrency(totalItemPriceCents)}</span>
+                          <span className="font-bold truncate">{item.name}</span>
+                          <div className="flex items-center gap-1">
+                            {item.claimedBy?.map((claim, idx) => (
+                              <button
+                                key={idx}
+                                onClick={() =>
+                                  claim.userId === user?._id &&
+                                  toggleClaim({ itemId: item._id })
+                                }
+                                title={claim.userName}
+                                className={`text-[9px] font-black tracking-tighter px-1.5 py-0.5 border-2 ${
+                                  claim.userId === user?._id
+                                    ? "border-ink bg-ink text-paper cursor-pointer"
+                                    : "border-ink/20 text-ink/40 cursor-default"
+                                }`}
+                              >
+                                [ {getInitials(claim.userName)} ]
+                              </button>
+                            ))}
+                            {!isClaimedByUser && (
+                              <button
+                                onClick={() =>
+                                  toggleClaim({ itemId: item._id })
+                                }
+                                className="text-[9px] font-black tracking-tighter px-1.5 py-0.5 border-2 border-dotted border-ink/40 text-ink/60 hover:border-solid hover:border-ink hover:text-ink transition-all"
+                              >
+                                [ CLAIM ]
+                              </button>
+                            )}
+                          </div>
+                          <span className="text-right">{formatCurrency(totalItemPriceCents)}</span>
                         </div>
                         {item.modifiers && item.modifiers.length > 0 && (
-                          <div className="flex flex-col gap-0.5 ml-6 italic opacity-60 text-[10px] uppercase">
+                          <div className="flex flex-col gap-0.5 ml-8 italic opacity-60 text-[10px] uppercase">
                             {item.modifiers.map((mod, idx) => (
                               <div key={idx}>+ {mod.name}</div>
                             ))}
@@ -288,6 +329,17 @@ export default function ReceiptDetailPage() {
             <p className="text-[10px] uppercase leading-relaxed max-w-[200px]">
               Click the button above to begin AI transcription
             </p>
+          </div>
+        )}
+
+        {isParsed && user && (
+          <div className="flex flex-col gap-4 mt-4">
+            <Link
+              href={`/receipts/${imageId}/${user._id}`}
+              className="w-full border-2 border-ink py-3 text-xs font-bold uppercase tracking-[0.2em] text-center hover:bg-ink hover:text-paper transition-all"
+            >
+              {">> View Your Personal Receipt <<"}
+            </Link>
           </div>
         )}
 

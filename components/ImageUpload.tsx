@@ -2,10 +2,8 @@
 
 import { useState, useRef, ChangeEvent, DragEvent } from "react";
 import Image from "next/image";
-import Link from "next/link";
-import { useMutation, useQuery } from "convex/react";
+import { useMutation } from "convex/react";
 import { api } from "../convex/_generated/api";
-import { Id } from "../convex/_generated/dataModel";
 import { toast } from "sonner";
 
 export function ImageUpload() {
@@ -17,8 +15,6 @@ export function ImageUpload() {
 
   const generateUploadUrl = useMutation(api.image.generateUploadUrl);
   const writeImage = useMutation(api.image.writeImage);
-  const deleteImage = useMutation(api.image.deleteImage);
-  const images = useQuery(api.image.requestImagesUrls);
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -83,16 +79,6 @@ export function ImageUpload() {
     }
   };
 
-  const handleDelete = async (id: Id<"images">) => {
-    try {
-      await deleteImage({ id });
-      toast.success("Receipt deleted");
-    } catch (error) {
-      console.error("Delete failed:", error);
-      toast.error("Failed to delete receipt");
-    }
-  };
-
   return (
     <div className="flex flex-col gap-8 w-full">
       {/* Upload Section */}
@@ -153,47 +139,6 @@ export function ImageUpload() {
           </div>
         )}
       </div>
-
-      <div className="dotted-line"></div>
-
-      {/* History Section */}
-      {images && images.length > 0 && (
-        <div className="flex flex-col gap-4">
-          <h3 className="text-[10px] font-bold uppercase tracking-widest text-center opacity-40">
-            --- Past Transactions ---
-          </h3>
-          <div className="grid grid-cols-2 gap-4">
-            {images.map((img) => (
-              <div key={img.id} className="group relative aspect-[3/4] border border-ink/10 hover:border-ink/30 transition-all bg-paper p-1">
-                <Link href={`/receipts/${img.id}`} className="block relative w-full h-full">
-                  {img.url && (
-                    <Image
-                      src={img.url}
-                      alt="Uploaded bill"
-                      fill
-                      className="object-cover opacity-80 group-hover:opacity-100 transition-opacity"
-                    />
-                  )}
-                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-paper/60 backdrop-blur-[1px]">
-                    <span className="text-[10px] font-bold uppercase border-2 border-ink px-3 py-1 bg-paper shadow-sm">
-                      View Detail
-                    </span>
-                  </div>
-                </Link>
-                <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handleDelete(img.id as Id<"images">);
-                  }}
-                  className="absolute top-2 right-2 w-6 h-6 bg-paper border border-ink flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-ink hover:text-paper z-20"
-                >
-                  <span className="text-xs font-bold leading-none">×</span>
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

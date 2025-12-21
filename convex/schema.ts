@@ -43,8 +43,8 @@ export default defineSchema({
     quantity: v.number(),
     priceCents: v.optional(v.number()),
 
-    // Who claimed this item and what percentage
-    claimedBy: v.optional(v.array(v.object({ userId: v.id("users"), claimedPercentage: v.number() }))),
+    // Who claimed this item
+    claimedBy: v.optional(v.array(v.id("users"))),
 
     // Modifiers will be an array on the line itmes
     modifiers: v.optional(v.array(v.object({ name: v.string(), priceCents: v.optional(v.number()) }))),
