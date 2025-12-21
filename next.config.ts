@@ -7,6 +7,10 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "knowing-cormorant-599.convex.cloud",
       },
+      {
+        protocol: "https",
+        hostname: "laudable-beagle-915.convex.cloud",
+      },
     ],
   },
 };

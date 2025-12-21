@@ -64,6 +64,8 @@ export function ImageUpload() {
       
       let fileToUpload = selectedFile;
       
+      // TEMP DISABLED - COMPRESSION
+      // TODO: RENABLE
       // Compress if larger than 1MB
       if (selectedFile.size > 1024 * 1024) {
         setIsCompressing(true);

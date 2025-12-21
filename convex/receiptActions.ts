@@ -11,29 +11,70 @@ import { z } from "zod";
 import { RECEIPT_PARSING_PROMPT } from "./prompts";
 
 // Zod schema for structured AI output
-const receiptParsingSchema = z.object({
+// const receiptParsingSchema = z.object({
+//   merchantName: z.string().optional().describe("Store or restaurant name"),
+//   date: z.string().optional().describe("Date on the receipt (as shown)"),
+//   totalCents: z.number().optional().describe("Total amount in cents (e.g., $12.50 = 1250)"),
+//   taxCents: z.number().optional().describe("Tax amount in cents"),
+//   tipCents: z.number().optional().describe("Tip amount in cents (if present)"),
+//   items: z.array(
+//     z.object({
+//       name: z.string().describe("Item name"),
+//       quantity: z.number().describe("Quantity purchased"),
+//       priceCents: z.number().optional().describe("Item price in cents"),
+//       modifiers: z
+//         .array(
+//           z.object({
+//             name: z.string().describe("Modifier name (e.g., 'extra cheese')"),
+//             priceCents: z.number().optional().describe("Modifier price in cents"),
+//           })
+//         )
+//         .optional()
+//         .describe("Item modifiers or add-ons"),
+//     })
+//   ).describe("List of items on the receipt"),
+// });
+
+// Hardened Zod schema for structured AI output
+export const receiptParsingSchema = z.object({
   merchantName: z.string().optional().describe("Store or restaurant name"),
   date: z.string().optional().describe("Date on the receipt (as shown)"),
-  totalCents: z.number().optional().describe("Total amount in cents (e.g., $12.50 = 1250)"),
-  taxCents: z.number().optional().describe("Tax amount in cents"),
-  tipCents: z.number().optional().describe("Tip amount in cents (if present)"),
-  items: z.array(
-    z.object({
-      name: z.string().describe("Item name"),
-      quantity: z.number().describe("Quantity purchased"),
-      priceCents: z.number().optional().describe("Item price in cents"),
-      modifiers: z
-        .array(
-          z.object({
-            name: z.string().describe("Modifier name (e.g., 'extra cheese')"),
-            priceCents: z.number().optional().describe("Modifier price in cents"),
-          })
-        )
-        .optional()
-        .describe("Item modifiers or add-ons"),
-    })
-  ).describe("List of items on the receipt"),
+
+  totalCents: z.number().int().min(0).optional().describe("Total amount in cents (e.g., $12.50 = 1250)"),
+  taxCents: z.number().int().min(0).optional().describe("Tax amount in cents"),
+  tipCents: z.number().int().min(0).optional().describe("Tip amount in cents (if present)"),
+
+  items: z
+    .array(
+      z.object({
+        name: z.string().min(1).describe("Item name"),
+
+        // ✅ KEY FIX: quantity must be an integer
+        quantity: z
+          .number()
+          .int()
+          .min(1)
+          .max(50)
+          .default(1)
+          .describe("Whole number quantity purchased (default 1). Never a decimal."),
+
+        priceCents: z.number().int().min(0).optional().describe("Item price in cents"),
+
+        modifiers: z
+          .array(
+            z.object({
+              name: z.string().min(1).describe("Modifier name (e.g., 'extra cheese')"),
+              priceCents: z.number().int().min(0).optional().describe("Modifier price in cents"),
+            }),
+          )
+          .optional()
+          .describe("Item modifiers or add-ons"),
+      }),
+    )
+    .min(1)
+    .describe("List of items on the receipt"),
 });
+
 
 /**
  * Parse a receipt image using Gemini AI.

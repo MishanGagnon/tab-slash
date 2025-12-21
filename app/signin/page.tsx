@@ -17,24 +17,6 @@ export default function SignIn() {
       <div className="w-full max-w-lg receipt-paper jagged-top jagged-bottom p-8 flex flex-col gap-8">
         {/* Header */}
         <div className="flex flex-col items-center gap-4">
-          <div className="flex items-center gap-3 grayscale contrast-200">
-            <Image src="/convex.svg" alt="Convex Logo" width={32} height={32} />
-            <div className="w-px h-8 bg-ink"></div>
-            <Image
-              src="/nextjs-icon-light-background.svg"
-              alt="Next.js Logo"
-              width={32}
-              height={32}
-              className="dark:hidden"
-            />
-            <Image
-              src="/nextjs-icon-dark-background.svg"
-              alt="Next.js Logo"
-              width={32}
-              height={32}
-              className="hidden dark:block"
-            />
-          </div>
           <h1 className="text-xl font-bold uppercase tracking-widest text-center">
             Bill Splitting Terminal
           </h1>

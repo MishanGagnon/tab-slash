@@ -12,6 +12,7 @@ export const RECEIPT_PARSING_PROMPT = `You are an intelligent multi-step receipt
    - If a value is missing, use null or omit the field if optional.
 
 2. **Item & Modifier Extraction**:
+   - Quantities should always be round whole numbers never have insane quantities without reason
    - It's critical that you are super aware of indentations and line breaks when extracting items and modifiers.
    - Treat indented or offset lines as modifiers of their parent item. (again be aware of indentations and line breaks)
    - Keep names simple and human-readable.
@@ -27,6 +28,11 @@ export const RECEIPT_PARSING_PROMPT = `You are an intelligent multi-step receipt
    - Prefer minimal inference; if a value is truly unreadable, use null.
 
 5. **Transcription**:
-   - Only transcribe text. Ignore barcodes, logos, or other non-textual elements.
+   - Only transcribe text. Ignore QR codes, barcodes, logos, or other non-textual elements. It will cause failure don't attempt
    - Ensure arithmetic and logic are consistent across all sections.
+
+6. **Quantity Rules**: 
+   - quantity MUST be a whole integer. NEVER output decimals.
+   - Only read quantity from a leading integer at the start of an item line (e.g. "1 Dinner Combo (Pick 3) $16.00" → quantity = 1).
+
 `;
