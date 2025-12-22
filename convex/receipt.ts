@@ -622,6 +622,7 @@ export const getReceiptWithItems = query({
         joinCode: v.optional(v.string()),
         currency: v.optional(v.string()),
         authedParticipants: v.optional(v.array(v.id("users"))),
+        tipConfirmed: v.optional(v.boolean()),
         participants: v.optional(
           v.array(
             v.object({
@@ -739,12 +740,54 @@ export const getReceiptWithItems = query({
         joinCode: receipt.joinCode,
         currency: receipt.currency,
         authedParticipants: receipt.authedParticipants,
+        tipConfirmed: receipt.tipConfirmed,
         participants: resolvedParticipants,
       },
       items: itemsWithUserNames,
       imageUrl,
       imageTableId,
     };
+  },
+});
+
+/**
+ * Mutation to confirm the tip for a receipt.
+ * Only the host can perform this action.
+ */
+export const confirmTip = mutation({
+  args: {
+    receiptId: v.id("receipts"),
+    tipCents: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("Unauthorized");
+    }
+
+    const receipt = await ctx.db.get(args.receiptId);
+    if (!receipt) {
+      throw new Error("Receipt not found");
+    }
+
+    if (receipt.hostUserId !== userId) {
+      throw new Error("Unauthorized: Only the host can confirm the tip");
+    }
+
+    const patch: { tipConfirmed: boolean; tipCents?: number; totalCents?: number } = {
+      tipConfirmed: true,
+    };
+
+    if (args.tipCents !== undefined) {
+      const subtotal =
+        (receipt.totalCents || 0) -
+        (receipt.taxCents || 0) -
+        (receipt.tipCents || 0);
+      patch.tipCents = args.tipCents;
+      patch.totalCents = subtotal + (receipt.taxCents || 0) + args.tipCents;
+    }
+
+    await ctx.db.patch(args.receiptId, patch);
   },
 });
 
@@ -778,6 +821,7 @@ export const getImageWithReceipt = query({
           joinCode: v.optional(v.string()),
           currency: v.optional(v.string()),
           authedParticipants: v.optional(v.array(v.id("users"))),
+          tipConfirmed: v.optional(v.boolean()),
           participants: v.optional(
             v.array(
               v.object({
@@ -910,6 +954,7 @@ export const getImageWithReceipt = query({
             joinCode: receipt.joinCode,
             currency: receipt.currency,
             authedParticipants: receipt.authedParticipants,
+            tipConfirmed: receipt.tipConfirmed,
             participants: resolvedParticipants,
           }
         : null,

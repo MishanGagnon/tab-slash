@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -32,11 +32,17 @@ export default function ReceiptDetailPage() {
   const toggleParticipantClaim = useMutation(api.receipt.toggleParticipantClaim);
   const joinSplit = useMutation(api.receipt.joinReceipt);
   const getOrCreateShareCode = useMutation(api.share.getOrCreateShareCode);
+  const confirmTip = useMutation(api.receipt.confirmTip);
 
   const [isJoining, setIsJoining] = useState(false);
   const [shareCode, setShareCode] = useState<string | null>(null);
   const [isGeneratingCode, setIsGeneratingCode] = useState(false);
   const [splittingItemId, setSplittingItemId] = useState<Id<"receiptItems"> | null>(null);
+  const [isAddingTip, setIsAddingTip] = useState(false);
+  const [customTipValue, setCustomTipValue] = useState("");
+  const [isConfirmingTip, setIsConfirmingTip] = useState(false);
+
+  const tipSectionRef = useRef<HTMLDivElement>(null);
 
   const isParsed = data?.receipt.status === "parsed";
   const isCurrentlyParsing = data?.receipt.status === "parsing" || isReparsing;
@@ -194,6 +200,41 @@ export default function ReceiptDetailPage() {
   }
 
   const { receipt, imageUrl, items } = data;
+
+  const subtotalCents =
+    receipt.totalCents !== undefined && receipt.taxCents !== undefined
+      ? receipt.totalCents - receipt.taxCents - (receipt.tipCents || 0)
+      : 0;
+
+  const tipPresets = [
+    { label: "18%", value: Math.round(subtotalCents * 0.18) },
+    { label: "20%", value: Math.round(subtotalCents * 0.2) },
+    { label: "22%", value: Math.round(subtotalCents * 0.22) },
+  ];
+
+  const handleConfirmTip = async (cents?: number) => {
+    setIsConfirmingTip(true);
+    try {
+      await confirmTip({
+        receiptId: receipt._id,
+        tipCents: cents,
+      });
+      toast.success("Tip confirmed!");
+      setIsAddingTip(false);
+    } catch (error) {
+      console.error("Failed to confirm tip:", error);
+      toast.error("Failed to confirm tip");
+    } finally {
+      setIsConfirmingTip(false);
+    }
+  };
+
+  const handleAdjustTip = () => {
+    setIsAddingTip(true);
+    setTimeout(() => {
+      tipSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 100);
+  };
 
   // Check if user needs to join
   const isHost = user && receipt.hostUserId === user._id;
@@ -438,6 +479,57 @@ export default function ReceiptDetailPage() {
           </div>
         ) : isParsed ? (
           <div className="flex flex-col gap-6">
+            {/* Host Tip Confirmation Banner */}
+            {isHost && !receipt.tipConfirmed && !isAddingTip && (
+              <div className="bg-yellow-50 border-2 border-dashed border-yellow-400 p-4 flex flex-col gap-3">
+                <div className="flex items-center gap-2 text-yellow-800">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                    <line x1="12" y1="9" x2="12" y2="13" />
+                    <line x1="12" y1="17" x2="12.01" y2="17" />
+                  </svg>
+                  <span className="text-[10px] font-bold uppercase tracking-widest">
+                    Action Required: Verify Tip
+                  </span>
+                </div>
+                <p className="text-[10px] uppercase leading-relaxed text-yellow-700 font-medium">
+                  AI parsed a tip of **{formatCurrency(receipt.tipCents)}** 
+                  {subtotalCents > 0 ? (
+                    <> ({((receipt.tipCents || 0) / subtotalCents * 100).toFixed(1)}% of **{formatCurrency(subtotalCents)}** subtotal)</>
+                  ) : (
+                    <> (Subtotal: **{formatCurrency(subtotalCents)}**)</>
+                  )}. 
+                  Is this correct?
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => handleConfirmTip()}
+                    disabled={isConfirmingTip}
+                    className="bg-yellow-600 text-white px-4 py-2 text-[10px] font-bold uppercase hover:bg-yellow-700 transition-all disabled:opacity-50"
+                  >
+                    {isConfirmingTip ? "CONFIRMING..." : "[ YES, CONFIRM ]"}
+                  </button>
+                  <button
+                    onClick={handleAdjustTip}
+                    disabled={isConfirmingTip}
+                    className="border-2 border-yellow-600 text-yellow-700 px-4 py-2 text-[10px] font-bold uppercase hover:bg-yellow-50 transition-all disabled:opacity-50"
+                  >
+                    [ NO, ADJUST ]
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Items */}
             <div className="flex flex-col gap-4">
               <h3 className="text-xs font-bold uppercase tracking-widest text-center">
@@ -553,27 +645,97 @@ export default function ReceiptDetailPage() {
 
             {/* Summary */}
             <div className="flex flex-col gap-2">
-              <div className="receipt-item-row text-xs uppercase opacity-70">
+                <div className="receipt-item-row text-xs uppercase opacity-70">
                 <span>Subtotal</span>
-                <span>
-                  {formatCurrency(
-                    receipt.totalCents !== undefined &&
-                      receipt.taxCents !== undefined
-                      ? receipt.totalCents -
-                          receipt.taxCents -
-                          (receipt.tipCents || 0)
-                      : undefined
-                  )}
-                </span>
+                <span>{formatCurrency(subtotalCents)}</span>
               </div>
               <div className="receipt-item-row text-xs uppercase opacity-70">
                 <span>Tax</span>
                 <span>{formatCurrency(receipt.taxCents)}</span>
               </div>
-              <div className="receipt-item-row text-xs uppercase opacity-70">
-                <span>Tip</span>
-                <span>{formatCurrency(receipt.tipCents)}</span>
+              <div className="receipt-item-row text-xs uppercase opacity-70" ref={tipSectionRef}>
+                <span>
+                  Tip
+                  {receipt.tipConfirmed && (
+                    <span className="ml-1 text-green-600 font-black" title="Confirmed by Host">
+                      ✓
+                    </span>
+                  )}
+                </span>
+                <div className="flex flex-col items-end gap-1">
+                  <span>{formatCurrency(receipt.tipCents)}</span>
+                  {isParsed && isHost && !isAddingTip && (
+                    <button
+                      onClick={() => setIsAddingTip(true)}
+                      className="text-[9px] font-bold uppercase underline opacity-50 hover:opacity-100"
+                    >
+                      [ {receipt.tipConfirmed ? "EDIT TIP" : "EDIT"} ]
+                    </button>
+                  )}
+                </div>
               </div>
+
+              {isParsed && isHost && isAddingTip && (
+                <div className="mt-2 p-3 border-2 border-dashed border-ink/20 flex flex-col gap-3 bg-paper">
+                  <div className="flex justify-between items-center">
+                    <p className="text-[10px] font-bold uppercase tracking-widest opacity-50">
+                      Select Tip Amount:
+                    </p>
+                    <button
+                      onClick={() => setIsAddingTip(false)}
+                      className="text-[10px] font-bold uppercase underline opacity-50 hover:opacity-100"
+                    >
+                      [ CANCEL ]
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    {tipPresets.map((preset) => (
+                      <button
+                        key={preset.label}
+                        onClick={() => handleConfirmTip(preset.value)}
+                        disabled={isConfirmingTip}
+                        className="border-2 border-ink/20 py-2 text-[10px] font-bold uppercase hover:bg-ink hover:text-paper transition-all"
+                      >
+                        {preset.label}
+                        <br />
+                        {formatCurrency(preset.value)}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex flex-col gap-2 pt-2 border-t border-ink/10">
+                    <p className="text-[10px] font-bold uppercase tracking-widest opacity-50">
+                      Custom Tip ($):
+                    </p>
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={customTipValue}
+                        onChange={(e) => setCustomTipValue(e.target.value)}
+                        placeholder="0.00"
+                        className="flex-1 bg-transparent border-b-2 border-ink/20 focus:border-ink outline-none text-xs font-mono py-1 px-2"
+                      />
+                      <button
+                        onClick={() => {
+                          const cents = Math.round(
+                            parseFloat(customTipValue) * 100
+                          );
+                          if (isNaN(cents)) {
+                            toast.error("Please enter a valid amount");
+                            return;
+                          }
+                          handleConfirmTip(cents);
+                        }}
+                        disabled={isConfirmingTip || !customTipValue}
+                        className="bg-ink text-paper px-4 py-1 text-[10px] font-bold uppercase hover:opacity-90 transition-all disabled:opacity-30"
+                      >
+                        SET
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className="receipt-item-row text-lg font-bold uppercase mt-2 border-t-4 border-ink/10 pt-2">
                 <span>Total</span>
                 <span>{formatCurrency(receipt.totalCents)}</span>

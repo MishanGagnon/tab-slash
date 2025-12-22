@@ -142,6 +142,37 @@ export default function PersonalReceiptPage() {
 
         {/* Content Section */}
         <div className="flex flex-col gap-6">
+          {/* Tip Confirmation Warning */}
+          {receipt && !receipt.tipConfirmed && (
+            <div className="bg-yellow-50 border-2 border-yellow-200 p-4 flex flex-col gap-2">
+              <div className="flex items-center gap-2 text-yellow-700">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                  <line x1="12" y1="9" x2="12" y2="13" />
+                  <line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
+                <p className="text-[10px] font-bold uppercase tracking-widest">
+                  Tip Not Confirmed
+                </p>
+              </div>
+              <p className="text-[10px] uppercase leading-relaxed text-yellow-600 font-medium">
+                The host has not yet confirmed the final tip amount. Please wait
+                for confirmation before settling your payment to ensure the
+                total is accurate.
+              </p>
+            </div>
+          )}
+
           {/* Items */}
           <div className="flex flex-col gap-4">
             <h3 className="text-xs font-bold uppercase tracking-widest text-center">

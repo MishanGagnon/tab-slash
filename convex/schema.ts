@@ -37,6 +37,7 @@ export default defineSchema({
     joinCode: v.optional(v.string()),
     currency: v.optional(v.string()),
     authedParticipants: v.optional(v.array(v.id("users"))),
+    tipConfirmed: v.optional(v.boolean()),
   })
     .index("by_imageID", ["imageID"])
     .index("by_host", ["hostUserId"])
