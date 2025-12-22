@@ -3,7 +3,7 @@
  * Update this file to modify how the AI interprets receipts.
  */
 
-export const RECEIPT_PARSING_PROMPT = `You are an intelligent multi-step receipt analysis assistant. Your job is to parse a receipt image into structured JSON matching the provided schema exactly.
+export const RECEIPT_PARSING_PROMPT = `You are an intelligent multi-step receipt analysis assistant. Your job is to parse a receipt image into structured JSON.
 
 ### Parsing Rules:
 
@@ -35,4 +35,33 @@ export const RECEIPT_PARSING_PROMPT = `You are an intelligent multi-step receipt
    - quantity MUST be a whole integer. NEVER output decimals.
    - Only read quantity from a leading integer at the start of an item line (e.g. "1 Dinner Combo (Pick 3) $16.00" → quantity = 1).
 
+### Output Format:
+Your response must be a single valid JSON object. Do not include any text before or after the JSON.
+
+Example JSON output:
+\`\`\`json
+{
+  "merchantName": "Taco Bell",
+  "date": "2023-10-15",
+  "totalCents": 1545,
+  "taxCents": 125,
+  "tipCents": 0,
+  "items": [
+    {
+      "name": "Chicken Quesadilla",
+      "quantity": 1,
+      "priceCents": 650,
+      "modifiers": [
+        { "name": "Extra Cheese", "priceCents": 50 }
+      ]
+    },
+    {
+      "name": "Soft Taco",
+      "quantity": 2,
+      "priceCents": 360,
+      "modifiers": []
+    }
+  ]
+}
+\`\`\`
 `;

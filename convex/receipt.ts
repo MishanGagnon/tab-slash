@@ -236,6 +236,29 @@ export const toggleParticipantClaim = mutation({
 });
 
 /**
+ * Internal mutation to mark a receipt as failed.
+ */
+export const markReceiptFailed = internalMutation({
+  args: {
+    storageId: v.id("_storage"),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const receipt = await ctx.db
+      .query("receipts")
+      .withIndex("by_imageID", (q) => q.eq("imageID", args.storageId))
+      .unique();
+
+    if (receipt) {
+      await ctx.db.patch(receipt._id, {
+        status: "error",
+      });
+    }
+    return null;
+  },
+});
+
+/**
  * Internal mutation to mark a receipt as parsing.
  */
 export const markReceiptParsing = internalMutation({

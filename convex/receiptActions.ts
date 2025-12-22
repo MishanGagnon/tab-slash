@@ -5,10 +5,19 @@ import { action, internalAction } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { Id } from "./_generated/dataModel";
-import { generateObject } from "ai";
-import { google } from "@ai-sdk/google";
+import { generateText } from "ai";
+import { google, GoogleGenerativeAIProviderOptions } from "@ai-sdk/google";
 import { z } from "zod";
 import { RECEIPT_PARSING_PROMPT } from "./prompts";
+
+// Helper to extract JSON from potential markdown backticks
+function extractJSON(text: string): string {
+  const match = text.match(/```json\s*([\s\S]*?)\s*```/);
+  if (match) {
+    return match[1].trim();
+  }
+  return text.trim();
+}
 
 // Zod schema for structured AI output
 // const receiptParsingSchema = z.object({
@@ -72,7 +81,7 @@ export const receiptParsingSchema = z.object({
       }),
     )
     .min(1)
-    .describe("List of items on the receipt"),
+    .describe("List of line items on the receipt"),
 });
 
 
@@ -115,32 +124,77 @@ export const parseReceipt = internalAction({
 
     // 4. Call Gemini with the image
     let parsedReceipt;
-    try {
-      const result = await generateObject({
-        model: google("gemini-3-flash-preview"),
-        schema: receiptParsingSchema,
-        temperature: 0, // Critical for stable JSON extraction
-        messages: [
-          { role: "system", content: RECEIPT_PARSING_PROMPT },
-          {
-            role: "user",
-            content: [
-              {
-                type: "image",
-                image: `data:${mimeType};base64,${base64Image}`,
-              },
-              {
-                type: "text",
-                text: "Extract all items, prices, and merchant details from this receipt image into the specified JSON format. Convert all prices to cents.",
-              },
-            ],
+    let lastError;
+    const MAX_ATTEMPTS = 3;
+
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+      try {
+        const result = await generateText({
+          model: google("gemini-3-flash-preview"),
+          temperature: 0, // Critical for stable JSON extraction
+          maxOutputTokens: 3000,
+          providerOptions: {
+            google: {
+              thinkingConfig: {
+                includeThoughts: true,
+                thinkingLevel: "low",
+              }
+            } satisfies GoogleGenerativeAIProviderOptions,
           },
-        ],
-      });
-      parsedReceipt = result.object;
-    } catch (error) {
-      console.error("AI Generation Error:", error);
-      throw new Error(`Failed to parse receipt with AI: ${error instanceof Error ? error.message : String(error)}`);
+          messages: [
+            { role: "system", content: RECEIPT_PARSING_PROMPT },
+            {
+              role: "user",
+              content: [
+                {
+                  type: "image",
+                  image: `data:${mimeType};base64,${base64Image}`,
+                },
+                {
+                  type: "text",
+                  text: "Extract all items, prices, and merchant details from this receipt image into the specified JSON format. Convert all prices to cents.",
+                },
+              ],
+            },
+          ],
+        });
+
+        const jsonString = extractJSON(result.text);
+        const rawObject = JSON.parse(jsonString);
+        parsedReceipt = receiptParsingSchema.parse(rawObject);
+
+        // Log token usage and cost estimation
+        const { inputTokens = 0, outputTokens = 0, reasoningTokens = 0 } = result.usage || {};
+        // Rates for Gemini 2.0 Flash: $0.10/1M input, $0.40/1M output
+        const cost = (inputTokens * 0.50) / 1_000_000 + ((outputTokens + reasoningTokens) * 3) / 1_000_000;
+        console.log(
+          `AI Parse Success (Attempt ${attempt}): ${inputTokens} input tokens, ${outputTokens} output tokens, ${reasoningTokens} reasoning tokens. ` +
+          `Estimated Cost: $${cost.toFixed(6)}`
+        );
+        
+        // If we succeeded, break out of the retry loop
+        break;
+      } catch (error) {
+        lastError = error;
+        console.error(`AI Generation Attempt ${attempt} Error:`, error);
+        
+        // If this was the last attempt, don't catch anymore
+        if (attempt === MAX_ATTEMPTS) {
+          // Set parsing status to failed in the database
+          await ctx.runMutation(internal.receipt.markReceiptFailed, {
+            storageId: image.storageId,
+          });
+          throw new Error(`Failed to parse receipt after ${MAX_ATTEMPTS} attempts with AI: ${error instanceof Error ? error.message : String(error)}`);
+        }
+        
+        // Wait a short bit before retrying (optional, but good practice)
+        // For serverless functions, we might just want to retry immediately or with a very short delay
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+    }
+
+    if (!parsedReceipt) {
+      throw new Error("Parsed receipt data is missing after all attempts.");
     }
 
     // 5. Store the parsed receipt in the database
@@ -165,6 +219,10 @@ export const parseReceipt = internalAction({
       return receiptId;
     } catch (error) {
       console.error("Database Storage Error:", error);
+      // Set parsing status to failed in the database
+      await ctx.runMutation(internal.receipt.markReceiptFailed, {
+        storageId: image.storageId,
+      });
       throw new Error(`Failed to store parsed receipt: ${error instanceof Error ? error.message : String(error)}`);
     }
   },
