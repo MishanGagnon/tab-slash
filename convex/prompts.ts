@@ -21,7 +21,9 @@ export const RECEIPT_PARSING_PROMPT = `You are an intelligent multi-step receipt
 
 3. **Receipt Types**:
    - **Grocery**: Sum per-category tax lines into a single tax value unless a combined total tax is already printed.
-   - **Restaurant**: Include both printed and handwritten tips if they are visible.
+   - **Restaurant**: Include both printed and handwritten tips if they are visible. For suggeted tips omit their tip amounts UNLESS they are circled or highlighted showing the payer chose it. 
+   - **Retail**: If the receipt includes multiple tip types which is common in some states include the sum of all tip types as the tip amount
+    
 
 4. **Consistency**:
    - Ensure the extracted total is approximately equal to subtotal + tax + tip (within ±5 cents).
