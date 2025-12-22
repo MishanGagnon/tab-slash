@@ -70,14 +70,14 @@ export default function SignIn() {
             >
               <div className="flex flex-col gap-3">
                 <input
-                  className="bg-paper border border-ink/20 p-3 text-xs uppercase tracking-widest placeholder:opacity-30 focus:border-ink outline-none transition-all"
+                  className="bg-paper border border-ink/20 p-3 text-base uppercase tracking-widest placeholder:opacity-30 focus:border-ink outline-none transition-all"
                   type="email"
                   name="email"
                   placeholder="[ Email Address ]"
                   required
                 />
                 <input
-                  className="bg-paper border border-ink/20 p-3 text-xs uppercase tracking-widest placeholder:opacity-30 focus:border-ink outline-none transition-all"
+                  className="bg-paper border border-ink/20 p-3 text-base uppercase tracking-widest placeholder:opacity-30 focus:border-ink outline-none transition-all"
                   type="password"
                   name="password"
                   placeholder="[ Password ]"

@@ -729,7 +729,7 @@ export default function ReceiptDetailPage() {
                         value={customTipValue}
                         onChange={(e) => setCustomTipValue(e.target.value)}
                         placeholder="0.00"
-                        className="flex-1 bg-transparent border-b-2 border-ink/20 focus:border-ink outline-none text-xs font-mono py-1 px-2"
+                        className="flex-1 bg-transparent border-b-2 border-ink/20 focus:border-ink outline-none text-base font-mono py-1 px-2"
                       />
                       <button
                         onClick={() => {

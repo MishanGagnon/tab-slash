@@ -71,7 +71,7 @@ export function VenmoModal({ isOpen, onClose, onSuccess }: VenmoModalProps) {
                 value={venmoUsername}
                 onChange={(e) => setVenmoUsername(e.target.value)}
                 placeholder="username"
-                className="w-full bg-paper border-2 border-ink pl-8 pr-4 py-3 text-xs font-bold uppercase tracking-widest placeholder:opacity-30 focus:outline-none"
+                className="w-full bg-paper border-2 border-ink pl-8 pr-4 py-3 text-base font-bold uppercase tracking-widest placeholder:opacity-30 focus:outline-none"
                 autoFocus
                 disabled={isSubmitting}
               />

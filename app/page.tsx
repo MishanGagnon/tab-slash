@@ -141,7 +141,7 @@ function SignOutButton() {
 //           value={code}
 //           onChange={(e) => setCode(e.target.value.toUpperCase().slice(0, 4))}
 //           placeholder="ENTER CODE (E.G. TACO)"
-//           className="flex-1 bg-paper border-2 border-ink px-4 py-3 text-xs font-bold uppercase tracking-widest placeholder:opacity-30 focus:outline-none"
+//           className="flex-1 bg-paper border-2 border-ink px-4 py-3 text-base font-bold uppercase tracking-widest placeholder:opacity-30 focus:outline-none"
 //           maxLength={4}
 //         />
 //         <button
@@ -257,7 +257,7 @@ function JoinSection({ onBack }: { onBack: () => void }) {
           value={code}
           onChange={(e) => setCode(e.target.value.toUpperCase().slice(0, 4))}
           placeholder="ENTER CODE (E.G. TACO)"
-          className="flex-1 bg-paper border-2 border-ink px-4 py-3 text-xs font-bold uppercase tracking-widest placeholder:opacity-30 focus:outline-none"
+          className="flex-1 bg-paper border-2 border-ink px-4 py-3 text-base font-bold uppercase tracking-widest placeholder:opacity-30 focus:outline-none"
           maxLength={4}
         />
         <button
