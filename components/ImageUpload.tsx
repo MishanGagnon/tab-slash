@@ -147,20 +147,20 @@ export function ImageUpload() {
                 className="object-contain"
               />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2 sm:gap-3">
               <button
                 onClick={clearImage}
                 disabled={isUploading}
-                className="border-2 border-ink py-3 text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-ink/5 disabled:opacity-50 transition-all"
+                className="border-2 border-ink py-3 text-[10px] font-bold uppercase tracking-widest sm:tracking-[0.2em] hover:bg-ink/5 disabled:opacity-50 transition-all"
               >
                 [ Cancel ]
               </button>
               <button
                 onClick={handleUpload}
                 disabled={isUploading}
-                className="bg-ink text-paper py-3 text-[10px] font-bold uppercase tracking-[0.2em] hover:opacity-90 disabled:opacity-50 transition-all"
+                className="bg-ink text-paper py-3 text-[10px] font-bold uppercase tracking-widest sm:tracking-[0.2em] hover:opacity-90 disabled:opacity-50 transition-all"
               >
-                {isUploading ? (isCompressing ? "Compressing..." : "Processing...") : ">> Upload Receipt <<"}
+                {isUploading ? (isCompressing ? "Comp..." : "Proc...") : ">> Upload <<"}
               </button>
             </div>
           </div>
