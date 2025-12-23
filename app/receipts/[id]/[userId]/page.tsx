@@ -83,6 +83,9 @@ export default function PersonalReceiptPage() {
   }
 
   const { receipt, items } = data;
+
+  // Check if target user is the host
+  const isHost = receipt.hostUserId === targetUserId;
   
   // Filter items claimed by this user
   const personalItems = items.filter(item => 
@@ -243,7 +246,7 @@ export default function PersonalReceiptPage() {
             )}
           </div>
 
-          <div className="dotted-line"></div>
+          <div className="dotted-line" style={{ opacity: 0.3 }}></div>
 
           {/* Summary */}
           <div className="flex flex-col gap-2">
@@ -265,8 +268,8 @@ export default function PersonalReceiptPage() {
             </div>
           </div>
 
-          {/* Venmo Payment Button - Mobile Only */}
-          {isMobile && personalTotalCents > 0 && (
+          {/* Venmo Payment Button - Mobile Only - Hide if user is host */}
+          {isMobile && personalTotalCents > 0 && !isHost && (
             <div className="flex flex-col gap-3 mt-4">
               <button
                 onClick={handleVenmoPay}
@@ -282,6 +285,43 @@ export default function PersonalReceiptPage() {
                   Paying to: @{receipt.hostVenmoUsername}
                 </p>
               )}
+            </div>
+          )}
+          {/* Alternative content for host */}
+          {isHost && (
+            <div className="flex flex-col gap-3 mt-4">
+              {/* Option 1: Payment Summary */}
+              <div className="border-2 border-ink/20 p-4 bg-paper/50 flex flex-col gap-2">
+                <h4 className="text-[12px] font-bold uppercase tracking-widest opacity-70">
+                  Payment Summary
+                </h4>
+                <div className="flex flex-col gap-1 text-[10px] uppercase opacity-60">
+                  <div className="flex justify-between">
+                    <span>Total Receipt:</span>
+                    <span>{formatCurrency(receipt.totalCents)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Your Share:</span>
+                    <span>{formatCurrency(personalTotalCents)}</span>
+                  </div>
+                  <div className="flex justify-between font-bold border-t border-ink/10 pt-1 mt-1">
+                    <span>Expected from Others:</span>
+                    <span>{formatCurrency((receipt.totalCents || 0) - personalTotalCents)}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Option 2: Share Receipt
+              <button
+                onClick={() => {
+                  const url = `${getBaseUrl()}/receipts/${receiptId}`;
+                  navigator.clipboard.writeText(url);
+                  toast.success("Receipt link copied!");
+                }}
+                className="w-full border-2 border-ink py-3 px-4 text-xs font-bold uppercase tracking-widest hover:bg-ink/10 transition-all active:scale-[0.98] touch-manipulation"
+              >
+                [ SHARE RECEIPT ]
+              </button> */}
             </div>
           )}
         </div>
