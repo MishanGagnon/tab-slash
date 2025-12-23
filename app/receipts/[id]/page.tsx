@@ -10,6 +10,7 @@ import { Id } from "../../../convex/_generated/dataModel";
 import { getBaseUrl } from "@/lib/utils";
 import { toast } from "sonner";
 import { ShareModal } from "@/components/ShareModal";
+import { ClaimedProgressBar } from "@/components/ClaimedProgressBar";
 
 export default function ReceiptDetailPage() {
   const params = useParams();
@@ -205,6 +206,28 @@ export default function ReceiptDetailPage() {
     receipt.totalCents !== undefined && receipt.taxCents !== undefined
       ? receipt.totalCents - receipt.taxCents - (receipt.tipCents || 0)
       : 0;
+
+  // Calculate claimed amount
+  const calculateClaimedAmount = (items: typeof data.items): number => {
+    return items.reduce((sum, item) => {
+      const itemTotal = (item.priceCents || 0) + 
+        (item.modifiers?.reduce((s, m) => s + (m.priceCents || 0), 0) || 0);
+      const numClaimants = item.claimedBy?.length || 0;
+      if (numClaimants > 0) {
+        // Each claimant pays their share, so total claimed is the full item price
+        return sum + itemTotal;
+      }
+      return sum;
+    }, 0);
+  };
+
+  const claimedAmountCents = isParsed ? calculateClaimedAmount(items) : 0;
+  
+  // Calculate total subtotal (sum of all items including modifiers)
+  const totalSubtotalCents = items.reduce((sum, item) => {
+    return sum + (item.priceCents || 0) + 
+      (item.modifiers?.reduce((s, m) => s + (m.priceCents || 0), 0) || 0);
+  }, 0);
 
   const tipPresets = [
     { label: "18%", value: Math.round(subtotalCents * 0.18) },
@@ -558,6 +581,20 @@ export default function ReceiptDetailPage() {
               <h3 className="text-xs font-bold uppercase tracking-widest text-center">
                 --- Items ---
               </h3>
+              
+              {/* Claimed Progress Bar */}
+              {isParsed && totalSubtotalCents > 0 && (
+                <div className="flex flex-col gap-2 w-full">
+                  <ClaimedProgressBar
+                    claimedAmountCents={claimedAmountCents}
+                    totalAmountCents={totalSubtotalCents}
+                    label=""
+                    showAmounts={true}
+                    barWidth={20}
+                  />
+                </div>
+              )}
+              
               {items.length > 0 ? (
                 <div className="flex flex-col gap-3">
                   {items.map((item) => {

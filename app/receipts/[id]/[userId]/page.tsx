@@ -8,6 +8,7 @@ import { Id } from "../../../../convex/_generated/dataModel";
 import { getBaseUrl } from "@/lib/utils";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
+import { ClaimedProgressBar } from "@/components/ClaimedProgressBar";
 
 export default function PersonalReceiptPage() {
   const params = useParams();
@@ -113,6 +114,25 @@ export default function PersonalReceiptPage() {
   const personalTipCents = Math.round((receipt?.tipCents || 0) * personalProportion);
   const personalTotalCents = personalSubtotalCents + personalTaxCents + personalTipCents;
 
+  // Calculate total claimed amount for progress bar
+  const calculateClaimedAmount = (items: typeof data.items): number => {
+    return items.reduce((sum, item) => {
+      const itemTotal = (item.priceCents || 0) + 
+        (item.modifiers?.reduce((s, m) => s + (m.priceCents || 0), 0) || 0);
+      const numClaimants = item.claimedBy?.length || 0;
+      if (numClaimants > 0) {
+        // Each claimant pays their share, so total claimed is the full item price
+        return sum + itemTotal;
+      }
+      return sum;
+    }, 0);
+  };
+
+  const claimedAmountCents = calculateClaimedAmount(items);
+  
+  // Calculate total subtotal (sum of all items including modifiers) - same as totalReceiptSubtotalCents
+  const totalSubtotalCents = totalReceiptSubtotalCents;
+
   const handleVenmoPay = () => {
     if (!receipt.hostVenmoUsername) {
       toast.error("Host hasn't set up their Venmo username yet.");
@@ -205,6 +225,20 @@ export default function PersonalReceiptPage() {
             <h3 className="text-xs font-bold uppercase tracking-widest text-center">
               --- Your Items ---
             </h3>
+            
+            {/* Claimed Progress Bar */}
+            {totalSubtotalCents > 0 && (
+              <div className="flex flex-col gap-2 w-full">
+                <ClaimedProgressBar
+                  claimedAmountCents={claimedAmountCents}
+                  totalAmountCents={totalSubtotalCents}
+                  label=""
+                  showAmounts={true}
+                  barWidth={20}
+                />
+              </div>
+            )}
+            
             {personalItems.length > 0 ? (
               <div className="flex flex-col gap-3">
                 {personalItems.map((item) => {
