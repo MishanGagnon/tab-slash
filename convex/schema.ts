@@ -59,8 +59,8 @@ export default defineSchema({
     code: v.string(), // e.g., "TACO"
     expiresAt: v.number(), // Timestamp
   })
-    .index("by_code", ["code"])
-    .index("by_receiptId", ["receiptId"]),
+    .index("by_code", ["code", "expiresAt"])
+    .index("by_receiptId", ["receiptId", "expiresAt"]),
 
   // Receipt Line Items Table
   // Each line item is a single item on the receipt

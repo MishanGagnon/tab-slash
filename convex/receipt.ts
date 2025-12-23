@@ -187,8 +187,7 @@ export const deleteReceipt = mutation({
     if (receipt.imageID) {
       const imageRecord = await ctx.db
         .query("images")
-        .withIndex("by_user", (q) => q.eq("uploadedBy", userId))
-        .filter((q) => q.eq(q.field("storageId"), receipt.imageID))
+        .withIndex("by_storageId", (q) => q.eq("storageId", receipt.imageID!))
         .unique();
 
       if (imageRecord) {
@@ -405,7 +404,7 @@ export const getImageByStorageId = internalQuery({
   handler: async (ctx, args) => {
     const image = await ctx.db
       .query("images")
-      .filter(q => q.eq(q.field("storageId"), args.storageId))
+      .withIndex("by_storageId", (q) => q.eq("storageId", args.storageId))
       .first();
     if (!image) return null;
     return {
@@ -815,7 +814,7 @@ export const getReceiptWithItems = query({
       // Find the images table record for this storageId
       const imageRecord = await ctx.db
         .query("images")
-        .filter(q => q.eq(q.field("storageId"), receipt.imageID))
+        .withIndex("by_storageId", (q) => q.eq("storageId", receipt.imageID!))
         .first();
       if (imageRecord) {
         imageTableId = imageRecord._id;

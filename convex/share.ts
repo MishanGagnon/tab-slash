@@ -24,8 +24,9 @@ export const getOrCreateShareCode = mutation({
     // Check if a valid code already exists
     const existing = await ctx.db
       .query("shareCodes")
-      .withIndex("by_receiptId", (q) => q.eq("receiptId", args.receiptId))
-      .filter((q) => q.gt(q.field("expiresAt"), now))
+      .withIndex("by_receiptId", (q) =>
+        q.eq("receiptId", args.receiptId).gt("expiresAt", now)
+      )
       .first();
 
     if (existing) {
@@ -42,8 +43,7 @@ export const getOrCreateShareCode = mutation({
     while (attempts < 5) {
       const inUse = await ctx.db
         .query("shareCodes")
-        .withIndex("by_code", (q) => q.eq("code", code))
-        .filter((q) => q.gt(q.field("expiresAt"), now))
+        .withIndex("by_code", (q) => q.eq("code", code).gt("expiresAt", now))
         .first();
       
       if (!inUse) break;
@@ -93,8 +93,9 @@ export const getReceiptByCode = query({
     const now = Date.now();
     const shareCode = await ctx.db
       .query("shareCodes")
-      .withIndex("by_code", (q) => q.eq("code", args.code.toUpperCase()))
-      .filter((q) => q.gt(q.field("expiresAt"), now))
+      .withIndex("by_code", (q) =>
+        q.eq("code", args.code.toUpperCase()).gt("expiresAt", now)
+      )
       .first();
 
     return shareCode?.receiptId ?? null;
