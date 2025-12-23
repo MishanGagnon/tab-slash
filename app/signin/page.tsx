@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuthActions } from "@convex-dev/auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import Image from "next/image";
 
@@ -11,6 +11,9 @@ export default function SignIn() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get("redirectTo") || "/";
+
 
   return (
     <main className="min-h-screen bg-background py-12 px-4 flex justify-center items-center">
@@ -36,7 +39,7 @@ export default function SignIn() {
 
           <div className="flex flex-col gap-4">
             <button
-              onClick={() => void signIn("google")}
+              onClick={() => void signIn("google", { redirectTo })}
               className="flex items-center justify-center gap-3 border-2 border-ink py-3 text-xs font-bold uppercase tracking-[0.1em] hover:bg-ink hover:text-paper transition-all cursor-pointer"
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true">
@@ -59,12 +62,12 @@ export default function SignIn() {
                 const formData = new FormData(e.target as HTMLFormElement);
                 formData.set("flow", flow);
                 void signIn("password", formData)
+                  .then(() => {
+                    router.push(redirectTo);
+                  })
                   .catch((error) => {
                     setError(error.message);
                     setLoading(false);
-                  })
-                  .then(() => {
-                    router.push("/");
                   });
               }}
             >
