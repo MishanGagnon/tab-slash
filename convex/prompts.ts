@@ -12,6 +12,7 @@ export const RECEIPT_PARSING_PROMPT = `You are an intelligent multi-step receipt
    - If a value is missing, use null or omit the field if optional.
 
 2. **Item & Modifier Extraction**:
+   - Item names may be truncated or incomplete, use your best judgement to complete the name and make it human readable.
    - Quantities should always be round whole numbers never have insane quantities without reason
    - It's critical that you are super aware of indentations and line breaks when extracting items and modifiers.
    - Treat indented or offset lines as modifiers of their parent item. (again be aware of indentations and line breaks)

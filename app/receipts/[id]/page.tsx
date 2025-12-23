@@ -484,8 +484,8 @@ export default function ReceiptDetailPage() {
           <div className="flex flex-col gap-6">
             {/* Host Tip Confirmation Banner */}
             {isHost && !receipt.tipConfirmed && !isAddingTip && (
-              <div className="bg-yellow-50 border-2 border-dashed border-yellow-400 p-4 flex flex-col gap-3">
-                <div className="flex items-center gap-2 text-yellow-800">
+              <div className="bg-yellow-50 border-2 border-dashed border-yellow-400 p-4 flex flex-col items-center gap-3 text-center">
+                <div className="flex items-center justify-center gap-2 text-yellow-800">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="16"
@@ -514,7 +514,7 @@ export default function ReceiptDetailPage() {
                   )}. 
                   Is this correct?
                 </p>
-                <div className="flex gap-3">
+                <div className="flex justify-center gap-3">
                   <button
                     onClick={() => handleConfirmTip()}
                     disabled={isConfirmingTip}
