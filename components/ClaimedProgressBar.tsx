@@ -13,7 +13,7 @@ interface ClaimedProgressBarProps {
 export function ClaimedProgressBar({
   claimedAmountCents,
   totalAmountCents,
-  label = "CLAIMED",
+  label,
   showAmounts = true,
   minBarWidth = 2,
 }: ClaimedProgressBarProps) {
@@ -86,13 +86,15 @@ export function ClaimedProgressBar({
 
   return (
     <div className="flex flex-col gap-1 w-full">
-      <div className="flex items-center gap-2 mb-1">
-        <div className="flex-1 border-t border-ink/20 border-dashed"></div>
-        <p className="text-[10px] font-bold uppercase tracking-widest opacity-70 whitespace-nowrap">
-          {label}
-        </p>
-        <div className="flex-1 border-t border-ink/20 border-dashed"></div>
-      </div>
+      {label && (
+        <div className="flex items-center gap-2 mb-1">
+          <div className="flex-1 border-t border-ink/20 border-dashed"></div>
+          <p className="text-[10px] font-bold uppercase tracking-widest opacity-70 whitespace-nowrap">
+            {label}
+          </p>
+          <div className="flex-1 border-t border-ink/20 border-dashed"></div>
+        </div>
+      )}
 
       <div className="flex flex-col items-center w-full mb-2 gap-2">
         <div className="flex items-center gap-3 text-[10px] uppercase font-mono w-full">

@@ -412,10 +412,10 @@ export default function ReceiptDetailPage() {
         </div>
       )}
 
-      <div className="w-full max-w-lg receipt-paper jagged-top jagged-bottom p-6 sm:p-8 flex flex-col gap-6">
+      <div className="w-full max-w-lg receipt-paper jagged-top jagged-bottom p-6 sm:p-8 flex flex-col gap-4">
         {/* Header */}
-        <div className="flex flex-col items-center gap-2">
-          <div className="w-full flex justify-between items-center mb-4">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-full flex justify-between items-center">
             <Link
               href="/"
               className="text-[10px] font-bold uppercase underline opacity-50 hover:opacity-100 whitespace-nowrap"
@@ -440,61 +440,65 @@ export default function ReceiptDetailPage() {
               </button>
             </div>
           </div>
-          <h1 className="text-xl font-bold uppercase tracking-[0.2em] text-center">
-            {receipt.merchantName || "Transaction Details"}
-          </h1>
-          {receipt.merchantType && (
-            <div className="flex items-center gap-1.5 px-2 py-0.5 border border-ink/20 bg-ink/5 rounded-full">
-              <span className="text-[10px] font-bold uppercase tracking-widest opacity-60">
-                {receipt.merchantType}
-              </span>
-            </div>
-          )}
-          {/* {receipt.date && (
-            <p className="text-xs uppercase tracking-widest opacity-70">
-              {receipt.date}
-            </p>
-          )} */}
-          {receipt.date && (
-            <div className="flex flex-col items-center gap-1">
-              <p className="text-xs uppercase tracking-widest opacity-70">
-                {receipt.date}
-              </p>
+
+          <div className="flex flex-col items-center gap-1">
+            <h1 className="text-xl font-bold uppercase tracking-[0.2em] text-center">
+              {receipt.merchantName || "Transaction Details"}
+            </h1>
+            <div className="flex flex-wrap justify-center items-center gap-x-2 gap-y-1 text-[10px] font-bold uppercase tracking-widest opacity-50">
+              {receipt.merchantType && <span>{receipt.merchantType}</span>}
+
+              {receipt.date && (
+                <>
+                  <span className="opacity-30">•</span>
+                  <span>{receipt.date}</span>
+                </>
+              )}
 
               {isParsed && shareCode && (
-                <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest">
+                <>
+                  <span className="opacity-30">•</span>
                   <button
                     onClick={() => {
-                      navigator.clipboard.writeText(shareCode)
+                      navigator.clipboard.writeText(shareCode);
                       toast.success("Join code is copied!");
                     }}
-                    // className="underline opacity-50 hover:opacity-100 transition-opacity"
+                    className="flex items-center gap-1 hover:text-ink transition-colors group"
                   >
-                    <span className="opacity-40">Join Code:</span>
-                    <span className="font-bold border border-ink/30 px-2 bg-paper">
+                    <span className="opacity-50">JOIN CODE:</span>
+                    <span className="underline decoration-dotted underline-offset-2 group-hover:no-underline">
                       {shareCode}
                     </span>
                   </button>
-                </div>
+                </>
               )}
             </div>
-          )}
+          </div>
 
-          {receipt.participants && receipt.participants.length > 0 && (
-            <div className="flex flex-wrap justify-center gap-2 mt-2">
-              {receipt.participants.map((p, idx) => (
-                <div
-                  key={idx}
-                  title={p.userName}
-                  className={`text-[9px] font-black tracking-tighter px-2 py-0.5 border-2 whitespace-nowrap ${
-                    p.userId === user?._id
-                      ? "border-ink bg-ink text-paper"
-                      : "border-ink/20 text-ink/40"
-                  }`}
-                >
-                  [ {getInitials(p.userName)} ]
-                </div>
-              ))}
+          {isParsed && receipt.participants && receipt.participants.length > 0 && (
+            <div className="w-full flex flex-col gap-3 pt-2">
+              <div className="flex items-center gap-2">
+                <div className="flex-1 border-t border-ink/20 border-dashed"></div>
+                <h3 className="text-[10px] font-bold uppercase tracking-widest text-center whitespace-nowrap opacity-70">
+                  Participants
+                </h3>
+                <div className="flex-1 border-t border-ink/20 border-dashed"></div>
+              </div>
+              <div className="flex flex-wrap justify-center gap-2">
+                {receipt.participants.map((p, idx) => (
+                  <div
+                    key={idx}
+                    title={p.userName}
+                    className={`text-[9px] font-black tracking-tighter px-2 py-0.5 border-2 whitespace-nowrap ${
+                      p.userId === user?._id
+                        ? "border-ink bg-ink text-paper"
+                        : "border-ink/20 text-ink/40"
+                    }`}
+                  >
+                    {getInitials(p.userName)}
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>
@@ -643,19 +647,6 @@ export default function ReceiptDetailPage() {
 
             {/* Items */}
             <div className="flex flex-col gap-6">
-              {/* Claimed Progress Bar */}
-              {isParsed && totalSubtotalCents > 0 && (
-                <div className="flex flex-col gap-3 w-full">
-                  <ClaimedProgressBar
-                    claimedAmountCents={claimedAmountCents}
-                    totalAmountCents={totalSubtotalCents}
-                    label="PROGRESS"
-                    showAmounts={true}
-                    minBarWidth={20}
-                  />
-                </div>
-              )}
-
               <div className="flex items-center gap-2">
                 <div className="flex-1 border-t border-ink/20 border-dashed"></div>
                 <h3 className="text-[10px] font-bold uppercase tracking-widest text-center whitespace-nowrap opacity-70">
@@ -821,6 +812,16 @@ export default function ReceiptDetailPage() {
 
             {/* Summary */}
             <div className="flex flex-col gap-2">
+              {isParsed && totalSubtotalCents > 0 && (
+                <div className="mb-2">
+                  <ClaimedProgressBar
+                    claimedAmountCents={claimedAmountCents}
+                    totalAmountCents={totalSubtotalCents}
+                    showAmounts={false}
+                    minBarWidth={15}
+                  />
+                </div>
+              )}
               <div className="receipt-item-row text-xs uppercase opacity-70">
                 <span>Subtotal</span>
                 <span>{formatCurrency(subtotalCents)}</span>
