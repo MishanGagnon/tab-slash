@@ -2,12 +2,12 @@
 
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { Id } from "../../../../convex/_generated/dataModel";
 import { getBaseUrl } from "@/lib/utils";
 import { toast } from "sonner";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { ClaimedProgressBar } from "@/components/ClaimedProgressBar";
 
 export default function PersonalReceiptPage() {
@@ -18,6 +18,7 @@ export default function PersonalReceiptPage() {
 
   const user = useQuery(api.receipt.currentUser);
   const data = useQuery(api.receipt.getReceiptWithItems, { receiptId });
+
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -30,16 +31,6 @@ export default function PersonalReceiptPage() {
     };
     setIsMobile(checkMobile());
   }, []);
-
-  const getInitials = (name: string | undefined) => {
-    if (!name) return "??";
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
-  };
 
   // Format cents to dollars
   const formatCurrency = (cents: number | undefined) => {
@@ -107,6 +98,13 @@ export default function PersonalReceiptPage() {
 
   const { receipt, items } = data;
 
+  const targetParticipant = receipt.participants?.find(
+    (p) => p.userId === targetUserId,
+  );
+  const targetUserName = targetParticipant?.userName || "User";
+
+  const isParsed = receipt.status === "parsed";
+
   // Helper to determine if we should show tip warning
   const shouldShowTipConfirmation = () => {
     if (!receipt || receipt.tipConfirmed) return false;
@@ -137,10 +135,6 @@ export default function PersonalReceiptPage() {
   const personalItems = items.filter((item) =>
     item.claimedBy?.some((claim) => claim.userId === targetUserId),
   );
-
-  const targetUserName =
-    personalItems[0]?.claimedBy?.find((c) => c.userId === targetUserId)
-      ?.userName || "User";
 
   // Calculate personal subtotal
   const personalSubtotalCents = personalItems.reduce((sum, item) => {
@@ -213,60 +207,46 @@ export default function PersonalReceiptPage() {
     <div className="min-h-screen bg-background py-6 sm:py-12 px-2 sm:px-4 flex justify-center">
       <div className="w-full max-w-lg receipt-paper jagged-top jagged-bottom p-6 sm:p-8 flex flex-col gap-6">
         {/* Header */}
-        <div className="flex flex-col items-center gap-2">
-          <div className="w-full flex justify-between items-center mb-4">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-full flex justify-between items-center">
             <Link
               href={`/receipts/${receiptId}`}
-              className="text-[10px] font-bold uppercase underline opacity-50 hover:opacity-100"
+              className="text-[10px] font-bold uppercase underline opacity-50 hover:opacity-100 whitespace-nowrap"
             >
-              {"<<"} BACK TO FULL RECEIPT
+              [ {"<<"} FULL RECEIPT ]
             </Link>
-            <button
-              onClick={() => {
-                const url = `${getBaseUrl()}/receipts/${receiptId}/${targetUserId}`;
-                navigator.clipboard.writeText(url);
-                toast.success("Personal statement link copied!");
-              }}
-              className="text-[10px] font-bold uppercase underline opacity-50 hover:opacity-100 cursor-pointer"
-            >
-              COPY STATEMENT LINK
-            </button>
-          </div>
-          <h1 className="text-xl font-bold uppercase tracking-[0.1em] text-center">
-            Personal Statement
-          </h1>
-          <div className="flex flex-wrap justify-center pb-4 gap-2">
-            {receipt.participants.map((p, idx) => (
-              <div
-                key={idx}
-                title={p.userName}
-                className={`text-[9px] font-black tracking-tighter px-2 py-0.5 border-2 whitespace-nowrap ${
-                  p.userId === user?._id
-                    ? "border-ink bg-ink text-paper"
-                    : "border-ink/20 text-ink/40"
-                }`}
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => {
+                  const url = `${getBaseUrl()}/receipts/${receiptId}/${targetUserId}`;
+                  navigator.clipboard.writeText(url);
+                  toast.success("Personal statement link copied!");
+                }}
+                className="text-[10px] font-bold uppercase underline opacity-50 hover:opacity-100 cursor-pointer whitespace-nowrap"
               >
-                {getInitials(p.userName)} | {targetUserName}
-              </div>
-            ))}
-          </div>
-          {/* <p className="text-xs uppercase font-semi-bold py-2">{targetUserName}</p> */}
-          {/* <div className="dotted-line"></div> */}
-          <p className="text-xs uppercase tracking-widest opacity-70">
-            {receipt?.merchantName}
-          </p>
-          {receipt?.merchantType && (
-            <div className="flex items-center gap-1.5 px-2 py-0.5 border border-ink/20 bg-ink/5 rounded-full">
-              <span className="text-[10px] font-bold uppercase tracking-widest opacity-60">
-                {receipt.merchantType}
-              </span>
+                [ SHARE STATEMENT ]
+              </button>
             </div>
-          )}
-          {receipt?.date && (
-            <p className="text-[10px] uppercase tracking-widest opacity-50">
-              {receipt.date}
-            </p>
-          )}
+          </div>
+
+          <div className="flex flex-col items-center gap-1">
+            <h1 className="text-xl font-bold uppercase tracking-[0.2em] text-center pt-6">
+              {receipt.merchantName || "Transaction Details"}
+            </h1>
+            <div className="flex flex-wrap justify-center items-center gap-x-2 gap-y-1 text-[10px] font-bold uppercase tracking-widest opacity-50">
+              <span className="text-ink font-black">{targetUserName}</span>
+              <span className="opacity-30">•</span>
+
+              {receipt.merchantType && (
+                <>
+                  <span>{receipt.merchantType}</span>
+                  <span className="opacity-30">•</span>
+                </>
+              )}
+
+              {receipt.date && <span>{receipt.date}</span>}
+            </div>
+          </div>
         </div>
 
         {/* Content Section */}
