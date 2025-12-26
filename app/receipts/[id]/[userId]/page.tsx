@@ -389,7 +389,7 @@ export default function PersonalReceiptPage() {
             <div className="flex flex-col gap-3 mt-4">
               <button
                 onClick={handleVenmoPay}
-                className="w-full bg-[#3d95ce] text-white py-4 px-6 rounded-lg font-bold uppercase tracking-widest flex items-center justify-center gap-3 shadow-lg hover:bg-[#3d95ce]/90 transition-all active:scale-[0.98] touch-manipulation"
+                className="w-full bg-paper text-ink border-2 border-ink py-4 px-6 font-bold uppercase tracking-[0.2em] text-xs flex items-center justify-center gap-3 hover:bg-ink hover:text-paper transition-all active:translate-x-[2px] active:translate-y-[2px] active:shadow-none shadow-[4px_4px_0px_var(--ink)] touch-manipulation"
               >
                 <svg
                   width="20"
@@ -397,12 +397,12 @@ export default function PersonalReceiptPage() {
                   viewBox="0 0 24 24"
                   fill="currentColor"
                 >
-                  <path d="M19.7 3H4.3C3.58 3 3 3.58 3 4.3v15.4c0 .72.58 1.3 1.3 1.3h15.4c.72 0 1.3-.58 1.3-1.3V4.3c0-.72-.58-1.3-1.3-1.3zm-3.1 14.2c-.4.5-1.1.8-1.9.8-1.1 0-1.9-.6-2.2-1.6l-2.4-8.8h2.3l1.5 6.4h.1l1.5-6.4h2.2l-2.6 9.6z" />
+                  {/* <path d="M19.704 3C20.419 3 21 3.581 21 4.296v15.408C21 20.419 20.419 21 19.704 21H4.296C3.581 21 3 20.419 3 19.704V4.296C3 3.581 3.581 3 4.296 3h15.408zm-3.115 14.212l2.607-9.638h-2.18l-1.542 6.425h-.065L14.067 7.574h-2.312l2.427 8.802c.304 1.01 1.104 1.637 2.23 1.637.787 0 1.483-.309 1.877-.801z" /> */}
                 </svg>
-                Pay Host via Venmo
+               PAY HOST VIA VENMO
               </button>
               {receipt.hostVenmoUsername && (
-                <p className="text-[9px] uppercase text-center opacity-50 font-bold">
+                <p className="text-[9px] uppercase text-center opacity-50 font-bold tracking-widest mt-1">
                   Paying to: @{receipt.hostVenmoUsername}
                 </p>
               )}
