@@ -138,6 +138,54 @@ export const joinReceipt = mutation({
 });
 
 /**
+ * Mutation to add a guest participant to a receipt.
+ * Only the host can perform this action.
+ */
+export const addGuestParticipant = mutation({
+  args: {
+    receiptId: v.id("receipts"),
+    name: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("Unauthorized");
+    }
+
+    const receipt = await ctx.db.get(args.receiptId);
+    if (!receipt) {
+      throw new Error("Receipt not found");
+    }
+
+    if (receipt.hostUserId !== userId) {
+      throw new Error("Unauthorized: Only the host can add guests");
+    }
+
+    // 1. Create a placeholder anonymous user
+    const guestId = await ctx.db.insert("users", {
+      name: args.name,
+      isAnonymous: true,
+    });
+
+    // 2. Add them to memberships so they show up in history/lists
+    await ctx.db.insert("memberships", {
+      userId: guestId,
+      receiptId: args.receiptId,
+      joinedAt: Date.now(),
+      merchantName: receipt.merchantName || "Unknown Merchant",
+    });
+
+    // 3. Add to authedParticipants to ensure they show up in the receipt UI
+    const participants = receipt.authedParticipants || [];
+    await ctx.db.patch(args.receiptId, {
+      authedParticipants: [...participants, guestId],
+    });
+
+    return guestId;
+  },
+});
+
+/**
  * Mutation to delete a receipt, its items, its image record, and storage file.
  * Only the host can perform this action.
  */
@@ -778,6 +826,7 @@ export const getReceiptWithItems = query({
             v.object({
               userId: v.id("users"),
               userName: v.string(),
+              isAnonymous: v.optional(v.boolean()),
             })
           )
         ),
@@ -855,6 +904,7 @@ export const getReceiptWithItems = query({
         return {
           userId,
           userName: user?.name || user?.email || "Unknown User",
+          isAnonymous: user?.isAnonymous,
         };
       })
     );
@@ -983,6 +1033,7 @@ export const getImageWithReceipt = query({
               v.object({
                 userId: v.id("users"),
                 userName: v.string(),
+                isAnonymous: v.optional(v.boolean()),
               })
             )
           ),
@@ -1084,6 +1135,7 @@ export const getImageWithReceipt = query({
           return {
             userId,
             userName: user?.name || user?.email || "Unknown User",
+            isAnonymous: user?.isAnonymous,
           };
         })
       );

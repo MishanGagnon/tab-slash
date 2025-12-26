@@ -36,6 +36,7 @@ export default function ReceiptDetailPage() {
     api.receipt.toggleParticipantClaim,
   );
   const joinSplit = useMutation(api.receipt.joinReceipt);
+  const addGuest = useMutation(api.receipt.addGuestParticipant);
   const getOrCreateShareCode = useMutation(api.share.getOrCreateShareCode);
   const confirmTip = useMutation(api.receipt.confirmTip);
 
@@ -47,6 +48,8 @@ export default function ReceiptDetailPage() {
   const [isAddingTip, setIsAddingTip] = useState(false);
   const [customTipValue, setCustomTipValue] = useState("");
   const [isConfirmingTip, setIsConfirmingTip] = useState(false);
+  const [isAddingGuest, setIsAddingGuest] = useState(false);
+  const [newGuestName, setNewGuestName] = useState("");
 
   const tipSectionRef = useRef<HTMLDivElement>(null);
   const shareCodeRequestedRef = useRef(false);
@@ -286,6 +289,29 @@ export default function ReceiptDetailPage() {
     );
   }, 0);
 
+  // Helper to calculate total for a specific user
+  const calculateUserTotal = (targetUserId: Id<"users">) => {
+    const userItems = items.filter((item) =>
+      item.claimedBy?.some((claim) => claim.userId === targetUserId),
+    );
+
+    const userSubtotalCents = userItems.reduce((sum, item) => {
+      const totalItemPriceCents =
+        (item.priceCents || 0) +
+        (item.modifiers?.reduce((s, m) => s + (m.priceCents || 0), 0) || 0);
+      const numClaimants = item.claimedBy?.length || 1;
+      return sum + Math.round(totalItemPriceCents / numClaimants);
+    }, 0);
+
+    const proportion =
+      totalSubtotalCents > 0 ? userSubtotalCents / totalSubtotalCents : 0;
+
+    const userTaxCents = Math.round((receipt?.taxCents || 0) * proportion);
+    const userTipCents = Math.round((receipt?.tipCents || 0) * proportion);
+
+    return userSubtotalCents + userTaxCents + userTipCents;
+  };
+
   const tipPresets = [
     { label: "18%", value: Math.round(subtotalCents * 0.18) },
     { label: "20%", value: Math.round(subtotalCents * 0.2) },
@@ -486,18 +512,105 @@ export default function ReceiptDetailPage() {
               </div>
               <div className="flex flex-wrap justify-center gap-2">
                 {receipt.participants.map((p, idx) => (
-                  <div
-                    key={idx}
-                    title={p.userName}
-                    className={`text-[9px] font-black tracking-tighter px-2 py-0.5 border-2 whitespace-nowrap ${
-                      p.userId === user?._id
-                        ? "border-ink bg-ink text-paper"
-                        : "border-ink/20 text-ink/40"
-                    }`}
-                  >
-                    {getInitials(p.userName)}
+                  <div key={idx} className="group relative">
+                    <div
+                      title={p.userName}
+                      className={`text-[9px] font-black tracking-tighter px-2 py-0.5 border-2 whitespace-nowrap transition-all ${
+                        p.userId === user?._id
+                          ? "border-ink bg-ink text-paper"
+                          : p.isAnonymous
+                            ? "border-dotted border-ink/40 text-ink/60"
+                            : "border-ink/20 text-ink/40"
+                      }`}
+                    >
+                      {getInitials(p.userName)}
+                    </div>
+                    {/* Guest Link Shortcut for Host */}
+                    {isHost && p.userId !== user?._id && (
+                      <button
+                        onClick={() => {
+                          const url = `${getBaseUrl()}/receipts/${receiptId}/${p.userId}`;
+                          navigator.clipboard.writeText(url);
+                          toast.success(`Statement link for ${p.userName} copied!`);
+                        }}
+                        className="absolute -top-7 left-1/2 -translate-x-1/2 hidden group-hover:block bg-ink text-paper text-[8px] py-1 px-2 whitespace-nowrap z-10 shadow-md uppercase font-bold"
+                      >
+                        Copy Guest Link
+                      </button>
+                    )}
                   </div>
                 ))}
+
+                {isHost && (
+                  <div className="flex items-center gap-2">
+                    {isAddingGuest ? (
+                      <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2">
+                        <input
+                          autoFocus
+                          type="text"
+                          value={newGuestName}
+                          onChange={(e) => setNewGuestName(e.target.value)}
+                          onKeyDown={async (e) => {
+                            if (e.key === "Enter" && newGuestName.trim()) {
+                              try {
+                                await addGuest({
+                                  receiptId,
+                                  name: newGuestName.trim(),
+                                });
+                                toast.success(`Added guest: ${newGuestName}`);
+                                setNewGuestName("");
+                                setIsAddingGuest(false);
+                              } catch (err) {
+                                toast.error("Failed to add guest");
+                              }
+                            } else if (e.key === "Escape") {
+                              setIsAddingGuest(false);
+                              setNewGuestName("");
+                            }
+                          }}
+                          placeholder="GUEST NAME"
+                          className="text-[9px] font-black tracking-tighter px-2 py-1 border-2 border-ink bg-transparent outline-none w-24 uppercase placeholder:opacity-30"
+                        />
+                        <button
+                          onClick={async () => {
+                            if (newGuestName.trim()) {
+                              try {
+                                await addGuest({
+                                  receiptId,
+                                  name: newGuestName.trim(),
+                                });
+                                toast.success(`Added guest: ${newGuestName}`);
+                                setNewGuestName("");
+                                setIsAddingGuest(false);
+                              } catch (err) {
+                                toast.error("Failed to add guest");
+                              }
+                            }
+                          }}
+                          className="text-[9px] font-black tracking-tighter px-2 py-0.5 border-2 border-ink bg-ink text-paper uppercase"
+                        >
+                          ADD
+                        </button>
+                        <button
+                          onClick={() => {
+                            setIsAddingGuest(false);
+                            setNewGuestName("");
+                          }}
+                          className="text-[9px] font-black tracking-tighter px-2 py-0.5 border-2 border-ink/20 text-ink/40 uppercase"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setIsAddingGuest(true)}
+                        className="text-[9px] font-black tracking-tighter px-2 py-0.5 border-2 border-dashed border-ink/40 text-ink/40 hover:border-ink hover:text-ink transition-all uppercase"
+                      >
+                        + Add Guest
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -702,7 +815,13 @@ export default function ReceiptDetailPage() {
                                     : "border-dotted border-ink/40 text-ink/60 hover:border-solid hover:border-ink hover:text-ink"
                                 }`}
                               >
-                                {isClaimedByUser ? "UNCLAIM" : "CLAIM"}
+                                {isClaimedByUser
+                                  ? "UNCLAIM"
+                                  : isHost &&
+                                      receipt.participants &&
+                                      receipt.participants.length > 1
+                                    ? "CLAIM / ASSIGN"
+                                    : "CLAIM"}
                               </button>
                               <button
                                 onClick={() =>
@@ -718,7 +837,11 @@ export default function ReceiptDetailPage() {
                                     : "border-ink/40 text-ink/60 hover:border-ink hover:text-ink"
                                 }`}
                               >
-                                SPLIT
+                                {isHost &&
+                                receipt.participants &&
+                                receipt.participants.length > 1
+                                  ? "SPLIT / ASSIGN"
+                                  : "SPLIT"}
                               </button>
                             </div>
 
@@ -758,7 +881,9 @@ export default function ReceiptDetailPage() {
                           <div className="mt-4 ml-9 p-3 border-2 border-dashed border-ink/20 flex flex-col gap-3 bg-paper">
                             <div className="flex justify-between items-center">
                               <p className="text-[10px] font-bold uppercase tracking-widest opacity-50">
-                                Split With Participants:
+                                {isHost
+                                  ? "Assign this item to:"
+                                  : "Split With Participants:"}
                               </p>
                               <button
                                 onClick={() => setSplittingItemId(null)}
@@ -923,6 +1048,77 @@ export default function ReceiptDetailPage() {
                 <span>Total</span>
                 <span>{formatCurrency(receipt.totalCents)}</span>
               </div>
+
+              {/* Participant Ledger (Host Only) */}
+              {isHost &&
+                receipt.participants &&
+                receipt.participants.length > 1 && (
+                  <div className="mt-8 pt-6 border-t-2 border-dashed border-ink/10">
+                    <h3 className="text-[10px] font-bold uppercase tracking-widest mb-4 opacity-50 text-center">
+                      — Participant Ledger —
+                    </h3>
+                    <div className="flex flex-col gap-3">
+                      {receipt.participants.map((p) => {
+                        const userTotal = calculateUserTotal(p.userId);
+                        return (
+                          <div
+                            key={p.userId}
+                            className="flex justify-between items-center group"
+                          >
+                            <div className="flex flex-col">
+                              <span className="text-[11px] font-bold uppercase">
+                                {p.userId === user?._id ? "You (Host)" : p.userName}
+                                {p.isAnonymous && (
+                                  <span className="ml-1 text-[8px] opacity-40">
+                                    [GUEST]
+                                  </span>
+                                )}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-4">
+                              <span className="text-[11px] font-mono font-bold">
+                                {formatCurrency(userTotal)}
+                              </span>
+                              <div className="flex gap-2">
+                                <Link
+                                  href={`/receipts/${receiptId}/${p.userId}`}
+                                  className="text-[9px] font-bold uppercase underline opacity-30 hover:opacity-100 transition-opacity"
+                                >
+                                  [ VIEW ]
+                                </Link>
+                                {p.userId !== user?._id && (
+                                  <button
+                                    onClick={() => {
+                                      const url = `${getBaseUrl()}/receipts/${receiptId}/${p.userId}`;
+                                      navigator.clipboard.writeText(url);
+                                      toast.success(
+                                        `Link for ${p.userName} copied!`,
+                                      );
+                                    }}
+                                    className="text-[9px] font-bold uppercase underline opacity-30 hover:opacity-100 transition-opacity whitespace-nowrap"
+                                  >
+                                    [ COPY LINK ]
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                      {/* Show unclaimd amount if any */}
+                      {totalSubtotalCents > claimedAmountCents && (
+                        <div className="flex justify-between items-center pt-2 mt-2 border-t border-ink/5 italic">
+                          <span className="text-[10px] uppercase opacity-40">
+                            Unclaimed Items
+                          </span>
+                          <span className="text-[10px] font-mono opacity-40">
+                            {formatCurrency(totalSubtotalCents - claimedAmountCents)}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
             </div>
           </div>
         ) : (
