@@ -233,6 +233,11 @@ export default function ReceiptDetailPage() {
     return name.trim().split(/\s+/)[0];
   };
 
+  const truncateName = (name: string, maxLength: number = 15) => {
+    if (!name || name.length <= maxLength) return name;
+    return name.slice(0, maxLength) + "...";
+  };
+
   // Loading state
   if (data === undefined) {
     return (
@@ -1146,20 +1151,20 @@ export default function ReceiptDetailPage() {
                               }
                               className={`flex gap-x-2 gap-y-0.5 mt-0.5 sm:col-start-2 sm:order-6 min-h-[1.25rem] cursor-pointer group ${
                                 expandedClaimantsItemId === item._id
-                                  ? "flex-wrap"
+                                  ? "flex-wrap items-baseline"
                                   : "flex-nowrap overflow-hidden items-center"
                               }`}
                             >
                               {item.claimedBy && item.claimedBy.length > 0 && (
                                 <>
-                                  <span className="text-[9px] uppercase font-bold opacity-30 whitespace-nowrap">
+                                  <span className="text-[9px] uppercase font-bold opacity-30 whitespace-nowrap flex-shrink-0 leading-[1.25rem]">
                                     Claimed by:
                                   </span>
                                   <div
-                                    className={`flex gap-x-1 items-center ${
+                                    className={`flex gap-x-1 items-baseline ${
                                       expandedClaimantsItemId === item._id
                                         ? "flex-wrap"
-                                        : "flex-nowrap"
+                                        : "flex-nowrap items-center"
                                     }`}
                                   >
                                     {(expandedClaimantsItemId === item._id
@@ -1603,23 +1608,23 @@ export default function ReceiptDetailPage() {
                         return (
                           <div
                             key={p.userId}
-                            className="flex justify-between items-center group"
+                            className="flex justify-between items-center group gap-2 min-w-0"
                           >
-                            <div className="flex flex-col">
-                              <span className="text-[11px] font-bold uppercase">
-                                {p.userId === user?._id ? "You (Host)" : p.userName}
+                            <div className="flex flex-col min-w-0 flex-1">
+                              <span className="text-[11px] font-bold uppercase truncate">
+                                {p.userId === user?._id ? "You (Host)" : truncateName(p.userName, 20)}
                                 {p.isAnonymous && (
-                                  <span className="ml-1 text-[8px] opacity-40">
+                                  <span className="ml-1 text-[8px] opacity-40 whitespace-nowrap">
                                     [GUEST]
                                   </span>
                                 )}
                               </span>
                             </div>
-                            <div className="flex items-center gap-4">
-                              <span className="text-[11px] font-mono font-bold">
+                            <div className="flex items-center gap-4 flex-shrink-0">
+                              <span className="text-[11px] font-mono font-bold whitespace-nowrap">
                                 {formatCurrency(userTotal)}
                               </span>
-                              <div className="flex gap-2">
+                              <div className="flex gap-2 flex-shrink-0">
                                 <Link
                                   href={`/receipts/${receiptId}/${p.userId}`}
                                   className="text-[9px] font-bold uppercase underline opacity-30 hover:opacity-100 transition-opacity"
