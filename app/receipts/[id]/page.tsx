@@ -975,7 +975,7 @@ export default function ReceiptDetailPage() {
                             </div>
                             <div className="flex flex-col items-end sm:contents">
                               {editingId === item._id ? (
-                                <div className="flex items-center gap-1 sm:order-3">
+                                <div className="flex items-center gap-2 sm:order-3">
                                   <input
                                     autoFocus
                                     type="number"
@@ -988,8 +988,45 @@ export default function ReceiptDetailPage() {
                                     }}
                                     className="w-20 bg-transparent border-b border-ink outline-none text-right font-mono"
                                   />
-                                  <button onClick={handleSaveEdit} className="text-[10px] font-bold">✓</button>
-                                  <button onClick={() => setEditingId(null)} className="text-[10px] font-bold">✕</button>
+                                  <button
+                                    onClick={handleSaveEdit}
+                                    className="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded transition-colors active:scale-95 flex items-center justify-center"
+                                    aria-label="Save changes"
+                                  >
+                                    <svg
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      width="14"
+                                      height="14"
+                                      viewBox="0 0 24 24"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      strokeWidth="3"
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                    >
+                                      <path d="M20 6L9 17l-5-5" />
+                                    </svg>
+                                  </button>
+                                  <button
+                                    onClick={() => setEditingId(null)}
+                                    className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded transition-colors active:scale-95 flex items-center justify-center"
+                                    aria-label="Cancel editing"
+                                  >
+                                    <svg
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      width="14"
+                                      height="14"
+                                      viewBox="0 0 24 24"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      strokeWidth="3"
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                    >
+                                      <path d="M18 6L6 18" />
+                                      <path d="M6 6l12 12" />
+                                    </svg>
+                                  </button>
                                 </div>
                               ) : (
                                 <div className="flex items-center gap-1 sm:order-3">
@@ -1295,8 +1332,45 @@ export default function ReceiptDetailPage() {
                         }}
                         className="w-20 bg-transparent border-b border-ink outline-none text-right font-mono"
                       />
-                      <button onClick={handleSaveEdit} className="text-[10px] font-bold">✓</button>
-                      <button onClick={() => setEditingId(null)} className="text-[10px] font-bold">✕</button>
+                      <button
+                        onClick={handleSaveEdit}
+                        className="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded transition-colors active:scale-95 flex items-center justify-center"
+                        aria-label="Save changes"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="3"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M20 6L9 17l-5-5" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={() => setEditingId(null)}
+                        className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded transition-colors active:scale-95 flex items-center justify-center"
+                        aria-label="Cancel editing"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="3"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M18 6L6 18" />
+                          <path d="M6 6l12 12" />
+                        </svg>
+                      </button>
                     </div>
                   ) : (
                     <>
@@ -1419,8 +1493,45 @@ export default function ReceiptDetailPage() {
                         }}
                         className="w-24 bg-transparent border-b border-ink outline-none text-right font-mono"
                       />
-                      <button onClick={handleSaveEdit} className="text-[10px] font-bold">✓</button>
-                      <button onClick={() => setEditingId(null)} className="text-[10px] font-bold">✕</button>
+                      <button
+                        onClick={handleSaveEdit}
+                        className="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded transition-colors active:scale-95 flex items-center justify-center"
+                        aria-label="Save changes"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="3"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M20 6L9 17l-5-5" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={() => setEditingId(null)}
+                        className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded transition-colors active:scale-95 flex items-center justify-center"
+                        aria-label="Cancel editing"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="3"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M18 6L6 18" />
+                          <path d="M6 6l12 12" />
+                        </svg>
+                      </button>
                     </div>
                   ) : (
                     <>
