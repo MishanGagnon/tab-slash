@@ -56,21 +56,21 @@ export function ClaimedProgressBar({
   const barColor = getColor(percentage);
 
   return (
-    <div className="flex flex-col gap-2 w-full">
+    <div className="flex flex-col gap-1 w-full">
       <div className="flex justify-between items-end">
         <div className="flex flex-col">
           {label && (
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40 leading-none mb-1.5">
+            <p className="text-[8px] font-black uppercase tracking-[0.2em] opacity-40 leading-none mb-1">
               {label}
             </p>
           )}
-          <h3 className="text-xs font-bold uppercase tracking-widest leading-none">
+          <h3 className="text-[10px] font-bold uppercase tracking-widest leading-none">
             Amount Claimed
           </h3>
         </div>
         <div className="flex flex-col items-end">
           <span 
-            className="text-xl font-black font-mono leading-none" 
+            className="text-sm font-black font-mono leading-none" 
             style={{ color: barColor }}
           >
             {Math.round(percentage)}%
@@ -78,46 +78,28 @@ export function ClaimedProgressBar({
         </div>
       </div>
 
-      <div className="relative h-4 w-full bg-ink/[0.03] border-2 border-ink overflow-hidden shadow-[2px_2px_0px_rgba(0,0,0,0.1)]">
-        {/* Subtle background pattern for the empty bar */}
-        <div 
-          className="absolute inset-0 opacity-[0.05]" 
-          style={{ 
-            backgroundImage: `radial-gradient(var(--ink) 1px, transparent 0)`,
-            backgroundSize: '4px 4px'
-          }} 
-        />
-        
+      <div className="relative h-1.5 w-full bg-ink/[0.03] border border-ink overflow-hidden shadow-[1px_1px_0px_rgba(0,0,0,0.1)]">
         {/* The progress fill */}
         <div
-          className="h-full transition-all duration-1000 ease-out relative border-r-2 border-ink/20"
+          className="h-full transition-all duration-1000 ease-out relative border-r border-ink/20"
           style={{
             width: `${percentage}%`,
             backgroundColor: barColor,
           }}
-        >
-           {/* Diagonal stripe pattern on the fill */}
-           <div 
-            className="absolute inset-0 opacity-20" 
-            style={{ 
-              backgroundImage: `linear-gradient(45deg, rgba(255,255,255,0.4) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0.4) 75%, transparent 75%, transparent)`,
-              backgroundSize: '12px 12px'
-            }} 
-          />
-        </div>
+        />
       </div>
 
       {showAmounts && (
-        <div className="flex justify-between items-start pt-1">
+        <div className="flex justify-between items-start pt-0.5">
           <div className="flex flex-col">
-            <span className="text-[9px] uppercase font-bold opacity-30 tracking-tighter">Claimed</span>
-            <span className="text-sm font-mono font-black" style={{ color: percentage > 0 ? barColor : undefined }}>
+            <span className="text-[8px] uppercase font-bold opacity-30 tracking-tighter">Claimed</span>
+            <span className="text-xs font-mono font-black" style={{ color: percentage > 0 ? barColor : undefined }}>
               {formatCurrency(claimedAmountCents)}
             </span>
           </div>
           <div className="flex flex-col items-end">
-            <span className="text-[9px] uppercase font-bold opacity-30 tracking-tighter">Remaining</span>
-            <span className="text-sm font-mono font-bold opacity-60">
+            <span className="text-[8px] uppercase font-bold opacity-30 tracking-tighter">Remaining</span>
+            <span className="text-xs font-mono font-bold opacity-60">
               {formatCurrency(Math.max(0, totalAmountCents - claimedAmountCents))}
             </span>
           </div>
