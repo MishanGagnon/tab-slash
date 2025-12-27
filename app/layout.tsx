@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "RECEIPT - Bill Splitter",
+  title: "TAB SLASH",
   description: "AI-powered bill splitting with a receipt aesthetic",
   icons: {
     icon: "/convex.svg",

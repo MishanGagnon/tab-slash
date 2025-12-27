@@ -17,31 +17,13 @@ export default function Home() {
       <div className="w-full max-w-lg receipt-paper jagged-top jagged-bottom p-6 sm:p-8 flex flex-col gap-8 relative">
         <Link
           href="/profile"
-          className="absolute top-6 right-6 text-[10px] font-bold uppercase border-2 border-ink px-4 py-2 hover:bg-ink/5 active:translate-x-[1px] active:translate-y-[1px] active:shadow-none shadow-[3px_3px_0px_var(--ink)] transition-all whitespace-nowrap bg-paper z-10"
+          className="absolute top-3 right-3 text-[8px] font-bold uppercase border-2 border-ink px-2 py-1 hover:bg-ink/5 active:translate-x-[1px] active:translate-y-[1px] active:shadow-none shadow-[2px_2px_0px_var(--ink)] transition-all whitespace-nowrap bg-paper z-10"
         >
           Profile
         </Link>
-        <div className="flex flex-col items-center gap-4">
-          <div className="flex items-center gap-3 grayscale contrast-200">
-            <Image src="/convex.svg" alt="Convex Logo" width={32} height={32} />
-            <div className="w-px h-8 bg-ink"></div>
-            <Image
-              src="/nextjs-icon-light-background.svg"
-              alt="Next.js Logo"
-              width={32}
-              height={32}
-              className="dark:hidden"
-            />
-            <Image
-              src="/nextjs-icon-dark-background.svg"
-              alt="Next.js Logo"
-              width={32}
-              height={32}
-              className="hidden dark:block"
-            />
-          </div>
-          <h1 className="text-xl font-bold uppercase tracking-widest text-center">
-            Divvy Bill Splitter
+        <div className="flex flex-col items-center gap-2">
+          <h1 className="text-2xl font-bold uppercase tracking-[0.2em] text-center">
+            Tab Slash
           </h1>
           <div className="dotted-line"></div>
         </div>

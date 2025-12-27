@@ -19,9 +19,9 @@ export default function SignIn() {
     <main className="min-h-screen bg-background py-12 px-4 flex justify-center items-center">
       <div className="w-full max-w-lg receipt-paper jagged-top jagged-bottom p-8 flex flex-col gap-8">
         {/* Header */}
-        <div className="flex flex-col items-center gap-4">
-          <h1 className="text-xl font-bold uppercase tracking-widest text-center">
-            Bill Splitting Terminal
+        <div className="flex flex-col items-center gap-2">
+          <h1 className="text-2xl font-bold uppercase tracking-[0.2em] text-center">
+            Tab Slash
           </h1>
           <div className="dotted-line"></div>
         </div>
