@@ -25,6 +25,7 @@ export default function PersonalReceiptPage() {
   const [isZelleModalOpen, setIsZelleModalOpen] = useState(false);
   const [zelleUsdAmount, setZelleUsdAmount] = useState<string>("");
   const [isTipWarningCollapsed, setIsTipWarningCollapsed] = useState(false);
+  const [isTipWarningDismissed, setIsTipWarningDismissed] = useState(false);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -35,7 +36,14 @@ export default function PersonalReceiptPage() {
       );
     };
     setIsMobile(checkMobile());
-  }, []);
+
+    // Check if tip warning was dismissed
+    if (receiptId) {
+      const dismissedKey = `tip-warning-dismissed-${receiptId}`;
+      const dismissed = localStorage.getItem(dismissedKey) === "true";
+      setIsTipWarningDismissed(dismissed);
+    }
+  }, [receiptId]);
 
   // Format cents to dollars
   const formatCurrency = (cents: number | undefined) => {
@@ -427,13 +435,13 @@ export default function PersonalReceiptPage() {
         {/* Content Section */}
         <div className="flex flex-col gap-6">
           {/* Tip Confirmation Warning */}
-          {receipt && shouldShowTipConfirmation() && (
+          {receipt && shouldShowTipConfirmation() && !isTipWarningDismissed && (
             <div className="bg-yellow-50 border-2 border-yellow-200 flex flex-col">
-              <button
-                onClick={() => setIsTipWarningCollapsed(!isTipWarningCollapsed)}
-                className="p-4 flex items-center justify-between gap-2 text-yellow-700 hover:bg-yellow-100 transition-colors cursor-pointer"
-              >
-                <div className="flex items-center gap-2">
+              <div className="p-4 flex items-center justify-between gap-2">
+                <button
+                  onClick={() => setIsTipWarningCollapsed(!isTipWarningCollapsed)}
+                  className="flex items-center gap-2 text-yellow-700 hover:bg-yellow-100 transition-colors cursor-pointer flex-1"
+                >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="16"
@@ -452,22 +460,48 @@ export default function PersonalReceiptPage() {
                   <p className="text-[10px] font-bold uppercase tracking-widest">
                     Tip Not Confirmed
                   </p>
+                </button>
+                <div className="flex items-center gap-2">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className={`transition-transform text-yellow-700 ${isTipWarningCollapsed ? "" : "rotate-180"}`}
+                  >
+                    <path d="M6 9l6 6 6-6" />
+                  </svg>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsTipWarningDismissed(true);
+                      const dismissedKey = `tip-warning-dismissed-${receiptId}`;
+                      localStorage.setItem(dismissedKey, "true");
+                    }}
+                    className="ml-2 p-1 hover:bg-yellow-100 rounded transition-colors text-yellow-700"
+                    title="Dismiss warning"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M18 6L6 18M6 6l12 12" />
+                    </svg>
+                  </button>
                 </div>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className={`transition-transform ${isTipWarningCollapsed ? "" : "rotate-180"}`}
-                >
-                  <path d="M6 9l6 6 6-6" />
-                </svg>
-              </button>
+              </div>
               {!isTipWarningCollapsed && (
                 <div className="px-4 pb-4">
                   <p className="text-[10px] uppercase leading-relaxed text-yellow-600 font-medium">

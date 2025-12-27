@@ -26,6 +26,8 @@ export default function ReceiptDetailPage() {
   const [showImageOverride, setShowImageOverride] = useState(false);
   const [isPriceMismatchCollapsed, setIsPriceMismatchCollapsed] =
     useState(false);
+  const [isPriceMismatchDismissed, setIsPriceMismatchDismissed] =
+    useState(false);
 
   const user = useQuery(api.receipt.currentUser);
   const data = useQuery(api.receipt.getReceiptWithItems, { receiptId });
@@ -157,6 +159,15 @@ export default function ReceiptDetailPage() {
 
     return () => clearInterval(interval);
   }, [isParsing, data?.receipt.parsingStartedAt]);
+
+  // Check if price mismatch warning was dismissed
+  useEffect(() => {
+    if (receiptId) {
+      const dismissedKey = `price-mismatch-dismissed-${receiptId}`;
+      const dismissed = localStorage.getItem(dismissedKey) === "true";
+      setIsPriceMismatchDismissed(dismissed);
+    }
+  }, [receiptId]);
 
   useEffect(() => {
     if (!isParsed) return;
@@ -588,8 +599,8 @@ export default function ReceiptDetailPage() {
                   <div className="flex-1 border-t border-ink/20 border-dashed"></div>
                 </div>
                 <div className="flex items-center justify-between gap-4">
-                  {/* Participant Icons - Left Side */}
-                  <div className="flex flex-wrap gap-2 flex-1">
+                  {/* Participant Icons - Centered */}
+                  <div className="flex flex-wrap gap-2 flex-1 justify-center">
                     {(() => {
                       const PARTICIPANT_THRESHOLD = 5; // Show collapsed view if more than this many participants
                       const VISIBLE_COUNT = 4; // Show first N participants when collapsed
@@ -1336,15 +1347,15 @@ export default function ReceiptDetailPage() {
 
             {/* Summary */}
             <div className="flex flex-col gap-2">
-              {isParsed && isTotalMismatch && isHost && (
+              {isParsed && isTotalMismatch && isHost && !isPriceMismatchDismissed && (
                 <div className="mb-4 bg-red-50 border-2 border-dashed border-red-400 flex flex-col animate-in fade-in slide-in-from-top-2">
-                  <button
-                    onClick={() =>
-                      setIsPriceMismatchCollapsed(!isPriceMismatchCollapsed)
-                    }
-                    className="p-4 flex items-center justify-between gap-2 text-red-600 hover:bg-red-100 transition-colors cursor-pointer"
-                  >
-                    <div className="flex items-center gap-2">
+                  <div className="p-4 flex items-center justify-between gap-2">
+                    <button
+                      onClick={() =>
+                        setIsPriceMismatchCollapsed(!isPriceMismatchCollapsed)
+                      }
+                      className="flex items-center gap-2 text-red-600 hover:bg-red-100 transition-colors cursor-pointer flex-1"
+                    >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         width="16"
@@ -1363,22 +1374,48 @@ export default function ReceiptDetailPage() {
                       <p className="text-[10px] uppercase font-bold leading-relaxed">
                         [ ATTENTION: PRICE MISMATCH ]
                       </p>
+                    </button>
+                    <div className="flex items-center gap-2">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className={`transition-transform text-red-600 ${isPriceMismatchCollapsed ? "" : "rotate-180"}`}
+                      >
+                        <path d="M6 9l6 6 6-6" />
+                      </svg>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsPriceMismatchDismissed(true);
+                          const dismissedKey = `price-mismatch-dismissed-${receiptId}`;
+                          localStorage.setItem(dismissedKey, "true");
+                        }}
+                        className="ml-2 p-1 hover:bg-red-100 rounded transition-colors text-red-600"
+                        title="Dismiss warning"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M18 6L6 18M6 6l12 12" />
+                        </svg>
+                      </button>
                     </div>
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className={`transition-transform ${isPriceMismatchCollapsed ? "" : "rotate-180"}`}
-                    >
-                      <path d="M6 9l6 6 6-6" />
-                    </svg>
-                  </button>
+                  </div>
                   {!isPriceMismatchCollapsed && (
                     <div className="px-4 pb-4 text-center">
                       <p className="text-[9px] uppercase font-medium text-red-600/70 mt-1">
