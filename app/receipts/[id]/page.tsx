@@ -24,6 +24,7 @@ export default function ReceiptDetailPage() {
   const [elapsedTime, setElapsedTime] = useState(0);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [showImageOverride, setShowImageOverride] = useState(false);
+  const [isPriceMismatchCollapsed, setIsPriceMismatchCollapsed] = useState(false);
 
   const user = useQuery(api.receipt.currentUser);
   const data = useQuery(api.receipt.getReceiptWithItems, { receiptId });
@@ -1208,19 +1209,59 @@ export default function ReceiptDetailPage() {
             {/* Summary */}
             <div className="flex flex-col gap-2">
               {isParsed && isTotalMismatch && isHost && (
-                <div className="mb-4 bg-red-50 border-2 border-dashed border-red-400 p-4 text-center animate-in fade-in slide-in-from-top-2">
-                  <p className="text-[10px] uppercase font-bold text-red-600 leading-relaxed">
-                    [ ATTENTION: PRICE MISMATCH ]
-                  </p>
-                  <p className="text-[9px] uppercase font-medium text-red-600/70 mt-1">
-                    Sum of items ({formatCurrency(totalSubtotalCents)}) + Tax ({formatCurrency(receipt.taxCents)}) + Tip ({formatCurrency(receipt.tipCents)}) = **{formatCurrency(calculatedTotalCents)}**
-                  </p>
-                  <p className="text-[9px] uppercase font-bold text-red-600 mt-2">
-                    Does not equal receipt total: **{formatCurrency(receipt.totalCents)}**
-                  </p>
-                  <p className="text-[8px] uppercase font-bold text-red-600/50 mt-1">
-                    Please check and edit prices to match.
-                  </p>
+                <div className="mb-4 bg-red-50 border-2 border-dashed border-red-400 flex flex-col animate-in fade-in slide-in-from-top-2">
+                  <button
+                    onClick={() => setIsPriceMismatchCollapsed(!isPriceMismatchCollapsed)}
+                    className="p-4 flex items-center justify-between gap-2 text-red-600 hover:bg-red-100 transition-colors cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                        <line x1="12" y1="9" x2="12" y2="13" />
+                        <line x1="12" y1="17" x2="12.01" y2="17" />
+                      </svg>
+                      <p className="text-[10px] uppercase font-bold leading-relaxed">
+                        [ ATTENTION: PRICE MISMATCH ]
+                      </p>
+                    </div>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className={`transition-transform ${isPriceMismatchCollapsed ? "" : "rotate-180"}`}
+                    >
+                      <path d="M6 9l6 6 6-6" />
+                    </svg>
+                  </button>
+                  {!isPriceMismatchCollapsed && (
+                    <div className="px-4 pb-4 text-center">
+                      <p className="text-[9px] uppercase font-medium text-red-600/70 mt-1">
+                        Sum of items ({formatCurrency(totalSubtotalCents)}) + Tax ({formatCurrency(receipt.taxCents)}) + Tip ({formatCurrency(receipt.tipCents)}) = **{formatCurrency(calculatedTotalCents)}**
+                      </p>
+                      <p className="text-[9px] uppercase font-bold text-red-600 mt-2">
+                        Does not equal receipt total: **{formatCurrency(receipt.totalCents)}**
+                      </p>
+                      <p className="text-[8px] uppercase font-bold text-red-600/50 mt-1">
+                        Please check and edit prices to match.
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
               {isParsed && totalSubtotalCents > 0 && (
