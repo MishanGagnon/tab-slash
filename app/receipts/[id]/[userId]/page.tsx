@@ -2,6 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { Id } from "../../../../convex/_generated/dataModel";
@@ -235,18 +236,21 @@ export default function PersonalReceiptPage() {
           label: "Venmo",
           handle: `@${receipt.hostVenmoUsername}`,
           onClick: handleVenmoPay,
+          logo: "/assets/venmo.webp",
         };
       if (method === "cashapp")
         return {
           label: "Cash App",
           handle: `$${receipt.hostCashAppUsername}`,
           onClick: handleCashAppPay,
+          logo: "/assets/CashApp_PaymentBadge_Green.png",
         };
       if (method === "zelle")
         return {
           label: "Zelle",
           handle: receipt.hostZellePhone,
           onClick: handleZellePay,
+          logo: "", // Add zelle.webp to app/assets/
         };
       return null;
     };
@@ -283,20 +287,30 @@ export default function PersonalReceiptPage() {
             </span>
           </div>
           <div className="flex-shrink-0">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="text-ink/40"
-            >
-              <path d="M5 12h14M12 5l7 7-7 7" />
-            </svg>
+            {props.logo ? (
+              <Image
+                src={props.logo}
+                alt={props.label}
+                width={32}
+                height={32}
+                className="object-contain"
+              />
+            ) : (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="text-ink/40"
+              >
+                <path d="M5 12h14M12 5l7 7-7 7" />
+              </svg>
+            )}
           </div>
         </button>
       </div>
