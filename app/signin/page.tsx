@@ -44,7 +44,7 @@ export default function SignIn() {
           <div className="flex flex-col gap-4">
             <button
               onClick={() => void signIn("google", { redirectTo })}
-              className="flex items-center justify-center gap-3 border-2 border-ink py-3 text-xs font-bold uppercase tracking-[0.1em] hover:bg-ink hover:text-paper transition-all cursor-pointer"
+              className="flex items-center justify-center gap-3 border-2 border-ink py-2 text-xs font-bold uppercase tracking-[0.1em] hover:bg-ink hover:text-paper transition-all cursor-pointer"
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="currentColor"/>
@@ -55,7 +55,13 @@ export default function SignIn() {
               Sign in with Google
             </button>
 
-            <div className="dotted-line my-2"></div>
+            <div className="flex items-center gap-2 w-full my-2">
+              <div className="flex-1 border-t border-ink/20 border-dashed"></div>
+              <span className="text-[10px] uppercase font-bold opacity-70 whitespace-nowrap">
+                OR
+              </span>
+              <div className="flex-1 border-t border-ink/20 border-dashed"></div>
+            </div>
 
             <form
               className="flex flex-col gap-4"
@@ -76,21 +82,31 @@ export default function SignIn() {
               }}
             >
               <div className="flex flex-col gap-3">
-                <input
-                  className="bg-paper border border-ink/20 p-3 text-base uppercase tracking-widest placeholder:opacity-30 focus:border-ink outline-none transition-all"
-                  type="email"
-                  name="email"
-                  placeholder="[ Email Address ]"
-                  required
-                />
-                <input
-                  className="bg-paper border border-ink/20 p-3 text-base uppercase tracking-widest placeholder:opacity-30 focus:border-ink outline-none transition-all"
-                  type="password"
-                  name="password"
-                  placeholder="[ Password ]"
-                  minLength={8}
-                  required
-                />
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] uppercase font-bold opacity-70">
+                    Email
+                  </label>
+                  <input
+                    className="bg-paper border border-ink/20 p-3 text-small uppercase tracking-normal placeholder:text-[12px] placeholder:opacity-30 focus:border-ink outline-none transition-all"
+                    type="email"
+                    name="email"
+                    placeholder="Enter your email"
+                    required
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] uppercase font-bold opacity-70">
+                    Password
+                  </label>
+                  <input
+                    className="bg-paper border border-ink/20 p-3 text-extra-small uppercase tracking-normal placeholder:text-[12px] placeholder:opacity-30 focus:border-ink outline-none transition-all"
+                    type="password"
+                    name="password"
+                    placeholder="••••••••••"
+                    minLength={8}
+                    required
+                  />
+                </div>
               </div>
 
               {error && (
