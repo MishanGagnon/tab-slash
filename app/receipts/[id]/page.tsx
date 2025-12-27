@@ -24,7 +24,8 @@ export default function ReceiptDetailPage() {
   const [elapsedTime, setElapsedTime] = useState(0);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [showImageOverride, setShowImageOverride] = useState(false);
-  const [isPriceMismatchCollapsed, setIsPriceMismatchCollapsed] = useState(false);
+  const [isPriceMismatchCollapsed, setIsPriceMismatchCollapsed] =
+    useState(false);
 
   const user = useQuery(api.receipt.currentUser);
   const data = useQuery(api.receipt.getReceiptWithItems, { receiptId });
@@ -58,6 +59,10 @@ export default function ReceiptDetailPage() {
   const [isAddingGuest, setIsAddingGuest] = useState(false);
   const [newGuestName, setNewGuestName] = useState("");
   const [isParticipantsExpanded, setIsParticipantsExpanded] = useState(false);
+  const [isLedgerModalOpen, setIsLedgerModalOpen] = useState(false);
+  const [expandedLedgerUserId, setExpandedLedgerUserId] = useState<string | null>(
+    null,
+  );
   const [isRemovingGuest, setIsRemovingGuest] = useState(false);
   const [guestToRemove, setGuestToRemove] = useState<{
     userId: Id<"users">;
@@ -95,7 +100,9 @@ export default function ReceiptDetailPage() {
 
   const handleStartEdit = (id: string, currentCents: number | undefined) => {
     setEditingId(id);
-    setEditValue(currentCents !== undefined ? (currentCents / 100).toFixed(2) : "0.00");
+    setEditValue(
+      currentCents !== undefined ? (currentCents / 100).toFixed(2) : "0.00",
+    );
   };
 
   const handleSaveEdit = async () => {
@@ -113,7 +120,10 @@ export default function ReceiptDetailPage() {
       } else if (editingId === "total") {
         await updateReceiptAmount({ receiptId, totalCents: cents });
       } else {
-        await updateItemPrice({ itemId: editingId as Id<"receiptItems">, priceCents: cents });
+        await updateItemPrice({
+          itemId: editingId as Id<"receiptItems">,
+          priceCents: cents,
+        });
       }
       toast.success("Amount updated");
     } catch (error) {
@@ -307,7 +317,12 @@ export default function ReceiptDetailPage() {
     const type = receipt.merchantType?.toLowerCase();
 
     // These types typically expect a tip, so we ask even if it's 0
-    const alwaysTippable = ["restaurant", "services", "travel", "entertainment"];
+    const alwaysTippable = [
+      "restaurant",
+      "services",
+      "travel",
+      "entertainment",
+    ];
     if (type && alwaysTippable.includes(type)) return true;
 
     // For other types (grocery, retail, etc.), only show if a tip was actually detected
@@ -350,8 +365,11 @@ export default function ReceiptDetailPage() {
     );
   }, 0);
 
-  const calculatedTotalCents = totalSubtotalCents + (receipt?.taxCents || 0) + (receipt?.tipCents || 0);
-  const isTotalMismatch = receipt?.totalCents !== undefined && Math.abs(calculatedTotalCents - receipt.totalCents) > 1; // 1 cent buffer for rounding
+  const calculatedTotalCents =
+    totalSubtotalCents + (receipt?.taxCents || 0) + (receipt?.tipCents || 0);
+  const isTotalMismatch =
+    receipt?.totalCents !== undefined &&
+    Math.abs(calculatedTotalCents - receipt.totalCents) > 1; // 1 cent buffer for rounding
 
   // Helper to calculate total for a specific user
   const calculateUserTotal = (targetUserId: Id<"users">) => {
@@ -558,271 +576,280 @@ export default function ReceiptDetailPage() {
             </div>
           </div>
 
-          {isParsed && receipt.participants && receipt.participants.length > 0 && (
-            <div className="w-full flex flex-col gap-3 pt-4">
-              <div className="flex items-center gap-2">
-                <div className="flex-1 border-t border-ink/20 border-dashed"></div>
-                <h3 className="text-[10px] font-bold uppercase tracking-widest text-center whitespace-nowrap opacity-70">
-                  Participants
-                </h3>
-                <div className="flex-1 border-t border-ink/20 border-dashed"></div>
-              </div>
-              <div className="flex items-center justify-between gap-4">
-                {/* Participant Icons - Left Side */}
-                <div className="flex flex-wrap gap-2 flex-1">
-                  {(() => {
-                    const PARTICIPANT_THRESHOLD = 5; // Show collapsed view if more than this many participants
-                    const VISIBLE_COUNT = 4; // Show first N participants when collapsed
-                    const shouldCollapse = receipt.participants.length > PARTICIPANT_THRESHOLD && !isParticipantsExpanded;
-                    const visibleParticipants = shouldCollapse
-                      ? receipt.participants.slice(0, VISIBLE_COUNT)
-                      : receipt.participants;
-                    const remainingCount = receipt.participants.length - VISIBLE_COUNT;
+          {isParsed &&
+            receipt.participants &&
+            receipt.participants.length > 0 && (
+              <div className="w-full flex flex-col gap-3 pt-4">
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 border-t border-ink/20 border-dashed"></div>
+                  <h3 className="text-[10px] font-bold uppercase tracking-widest text-center whitespace-nowrap opacity-70">
+                    Participants
+                  </h3>
+                  <div className="flex-1 border-t border-ink/20 border-dashed"></div>
+                </div>
+                <div className="flex items-center justify-between gap-4">
+                  {/* Participant Icons - Left Side */}
+                  <div className="flex flex-wrap gap-2 flex-1">
+                    {(() => {
+                      const PARTICIPANT_THRESHOLD = 5; // Show collapsed view if more than this many participants
+                      const VISIBLE_COUNT = 4; // Show first N participants when collapsed
+                      const shouldCollapse =
+                        receipt.participants.length > PARTICIPANT_THRESHOLD &&
+                        !isParticipantsExpanded;
+                      const visibleParticipants = shouldCollapse
+                        ? receipt.participants.slice(0, VISIBLE_COUNT)
+                        : receipt.participants;
+                      const remainingCount =
+                        receipt.participants.length - VISIBLE_COUNT;
 
-                    return (
-                      <>
-                        {visibleParticipants.map((p, idx) => (
-                          <div key={idx} className="group relative">
-                            <div
-                              title={p.userName}
-                              className={`text-[9px] font-black tracking-tighter px-2 py-0.5 border-2 whitespace-nowrap transition-all ${
-                                p.userId === user?._id
-                                  ? "border-ink bg-ink text-paper"
-                                  : p.isAnonymous
-                                    ? "border-dotted border-ink/40 text-ink/60"
-                                    : "border-ink/20 text-ink/40"
-                              }`}
-                            >
-                              {getInitials(p.userName)}
-                            </div>
-                            {/* Guest Link Shortcut for Host */}
-                            {isHost && p.userId !== user?._id && (
-                              <button
-                                onClick={() => {
-                                  const url = `${getBaseUrl()}/receipts/${receiptId}/${p.userId}`;
-                                  navigator.clipboard.writeText(url);
-                                  toast.success(`Statement link for ${p.userName} copied!`);
-                                }}
-                                className="absolute -top-7 left-1/2 -translate-x-1/2 hidden group-hover:block bg-ink text-paper text-[8px] py-1 px-2 whitespace-nowrap z-10 shadow-md uppercase font-bold"
+                      return (
+                        <>
+                          {visibleParticipants.map((p, idx) => (
+                            <div key={idx} className="group relative">
+                              <div
+                                title={p.userName}
+                                className={`text-[9px] font-black tracking-tighter px-2 py-0.5 border-2 whitespace-nowrap transition-all ${
+                                  p.userId === user?._id
+                                    ? "border-ink bg-ink text-paper"
+                                    : p.isAnonymous
+                                      ? "border-dotted border-ink/40 text-ink/60"
+                                      : "border-ink/20 text-ink/40"
+                                }`}
                               >
-                                Copy Guest Link
+                                {getInitials(p.userName)}
+                              </div>
+                              {/* Guest Link Shortcut for Host */}
+                              {isHost && p.userId !== user?._id && (
+                                <button
+                                  onClick={() => {
+                                    const url = `${getBaseUrl()}/receipts/${receiptId}/${p.userId}`;
+                                    navigator.clipboard.writeText(url);
+                                    toast.success(
+                                      `Statement link for ${p.userName} copied!`,
+                                    );
+                                  }}
+                                  className="absolute -top-7 left-1/2 -translate-x-1/2 hidden group-hover:block bg-ink text-paper text-[8px] py-1 px-2 whitespace-nowrap z-10 shadow-md uppercase font-bold"
+                                >
+                                  Copy Guest Link
+                                </button>
+                              )}
+                            </div>
+                          ))}
+                          {shouldCollapse && (
+                            <button
+                              onClick={() => setIsParticipantsExpanded(true)}
+                              className="text-[9px] font-black tracking-tighter px-2 py-0.5 border-2 border-dashed border-ink/40 text-ink/60 hover:border-ink/60 hover:text-ink transition-all cursor-pointer"
+                              title={`Show ${remainingCount} more participants`}
+                            >
+                              +{remainingCount}
+                            </button>
+                          )}
+                          {isParticipantsExpanded &&
+                            receipt.participants.length >
+                              PARTICIPANT_THRESHOLD && (
+                              <button
+                                onClick={() => setIsParticipantsExpanded(false)}
+                                className="text-[9px] font-black tracking-tighter px-2 py-0.5 border-2 border-dashed border-ink/40 text-ink/60 hover:border-ink/60 hover:text-ink transition-all cursor-pointer"
+                                title="Collapse participant list"
+                              >
+                                −
                               </button>
                             )}
-                          </div>
-                        ))}
-                        {shouldCollapse && (
-                          <button
-                            onClick={() => setIsParticipantsExpanded(true)}
-                            className="text-[9px] font-black tracking-tighter px-2 py-0.5 border-2 border-dashed border-ink/40 text-ink/60 hover:border-ink/60 hover:text-ink transition-all cursor-pointer"
-                            title={`Show ${remainingCount} more participants`}
-                          >
-                            +{remainingCount}
-                          </button>
-                        )}
-                        {isParticipantsExpanded && receipt.participants.length > PARTICIPANT_THRESHOLD && (
-                          <button
-                            onClick={() => setIsParticipantsExpanded(false)}
-                            className="text-[9px] font-black tracking-tighter px-2 py-0.5 border-2 border-dashed border-ink/40 text-ink/60 hover:border-ink/60 hover:text-ink transition-all cursor-pointer"
-                            title="Collapse participant list"
-                          >
-                            −
-                          </button>
-                        )}
-                      </>
-                    );
-                  })()}
-                </div>
+                        </>
+                      );
+                    })()}
+                  </div>
 
-                {/* Add/Remove Buttons - Right Side */}
-                {isHost && (
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    {isAddingGuest ? (
-                      <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2">
-                        <input
-                          autoFocus
-                          type="text"
-                          value={newGuestName}
-                          onChange={(e) => setNewGuestName(e.target.value)}
-                          onKeyDown={async (e) => {
-                            if (e.key === "Enter" && newGuestName.trim()) {
-                              try {
-                                await addGuest({
-                                  receiptId,
-                                  name: newGuestName.trim(),
-                                });
-                                toast.success(`Added guest: ${newGuestName}`);
-                                setNewGuestName("");
+                  {/* Add/Remove Buttons - Right Side */}
+                  {isHost && (
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      {isAddingGuest ? (
+                        <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2">
+                          <input
+                            autoFocus
+                            type="text"
+                            value={newGuestName}
+                            onChange={(e) => setNewGuestName(e.target.value)}
+                            onKeyDown={async (e) => {
+                              if (e.key === "Enter" && newGuestName.trim()) {
+                                try {
+                                  await addGuest({
+                                    receiptId,
+                                    name: newGuestName.trim(),
+                                  });
+                                  toast.success(`Added guest: ${newGuestName}`);
+                                  setNewGuestName("");
+                                  setIsAddingGuest(false);
+                                } catch (err) {
+                                  toast.error("Failed to add guest");
+                                }
+                              } else if (e.key === "Escape") {
                                 setIsAddingGuest(false);
-                              } catch (err) {
-                                toast.error("Failed to add guest");
+                                setNewGuestName("");
                               }
-                            } else if (e.key === "Escape") {
+                            }}
+                            placeholder="GUEST NAME"
+                            className="text-[9px] font-black tracking-tighter px-3 py-2 border-2 border-ink bg-transparent outline-none uppercase placeholder:opacity-30 w-32"
+                          />
+                          <button
+                            onClick={async () => {
+                              if (newGuestName.trim()) {
+                                try {
+                                  await addGuest({
+                                    receiptId,
+                                    name: newGuestName.trim(),
+                                  });
+                                  toast.success(`Added guest: ${newGuestName}`);
+                                  setNewGuestName("");
+                                  setIsAddingGuest(false);
+                                } catch (err) {
+                                  toast.error("Failed to add guest");
+                                }
+                              }
+                            }}
+                            disabled={!newGuestName.trim()}
+                            className="text-[9px] font-black tracking-tighter px-4 py-2 border-2 border-ink bg-ink text-paper uppercase hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            ADD
+                          </button>
+                          <button
+                            onClick={() => {
                               setIsAddingGuest(false);
                               setNewGuestName("");
-                            }
-                          }}
-                          placeholder="GUEST NAME"
-                          className="text-[9px] font-black tracking-tighter px-3 py-2 border-2 border-ink bg-transparent outline-none uppercase placeholder:opacity-30 w-32"
-                        />
-                        <button
-                          onClick={async () => {
-                            if (newGuestName.trim()) {
-                              try {
-                                await addGuest({
-                                  receiptId,
-                                  name: newGuestName.trim(),
-                                });
-                                toast.success(`Added guest: ${newGuestName}`);
-                                setNewGuestName("");
-                                setIsAddingGuest(false);
-                              } catch (err) {
-                                toast.error("Failed to add guest");
-                              }
-                            }
-                          }}
-                          disabled={!newGuestName.trim()}
-                          className="text-[9px] font-black tracking-tighter px-4 py-2 border-2 border-ink bg-ink text-paper uppercase hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          ADD
-                        </button>
+                            }}
+                            className="text-[9px] font-black tracking-tighter px-3 py-2 border-2 border-ink/30 text-ink/60 hover:border-ink/50 hover:text-ink uppercase transition-colors"
+                          >
+                            CANCEL
+                          </button>
+                        </div>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => setIsAddingGuest(true)}
+                            className="text-[10px] font-black tracking-tighter w-6 h-6 border-2 border-green-500/60 bg-green-500/30 text-green-700 hover:bg-green-500/50 transition-colors flex items-center justify-center"
+                            aria-label="Add guest"
+                          >
+                            +
+                          </button>
+                          {receipt.participants.some(
+                            (p) =>
+                              p.isAnonymous &&
+                              (isHost || (user && p.createdBy === user._id)),
+                          ) && (
+                            <button
+                              onClick={() => setIsRemovingGuest(true)}
+                              className="text-[10px] font-black tracking-tighter w-6 h-6 border-2 border-red-500/60 bg-red-500/30 text-red-700 hover:bg-red-500/50 transition-colors flex items-center justify-center"
+                              aria-label="Remove guest"
+                            >
+                              −
+                            </button>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Remove Guest Modal */}
+                {isRemovingGuest && (
+                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
+                    <div className="w-full max-w-sm receipt-paper jagged-top jagged-bottom p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+                      <div className="flex justify-between items-center border-b-2 border-ink/10 pb-3 mb-4">
+                        <h3 className="text-xs font-black uppercase tracking-widest">
+                          {guestToRemove ? "Confirm Removal" : "Remove Guest"}
+                        </h3>
                         <button
                           onClick={() => {
-                            setIsAddingGuest(false);
-                            setNewGuestName("");
+                            setIsRemovingGuest(false);
+                            setGuestToRemove(null);
                           }}
-                          className="text-[9px] font-black tracking-tighter px-3 py-2 border-2 border-ink/30 text-ink/60 hover:border-ink/50 hover:text-ink uppercase transition-colors"
+                          className="text-xs font-bold opacity-50 hover:opacity-100"
                         >
-                          CANCEL
+                          ✕
                         </button>
                       </div>
-                    ) : (
-                      <>
-                        <button
-                          onClick={() => setIsAddingGuest(true)}
-                          className="text-[10px] font-black tracking-tighter w-6 h-6 border-2 border-green-500/60 bg-green-500/30 text-green-700 hover:bg-green-500/50 transition-colors flex items-center justify-center"
-                          aria-label="Add guest"
-                        >
-                          +
-                        </button>
-                        {receipt.participants.some(
-                          (p) =>
-                            p.isAnonymous &&
-                            (isHost || (user && p.createdBy === user._id)),
-                        ) && (
-                          <button
-                            onClick={() => setIsRemovingGuest(true)}
-                            className="text-[10px] font-black tracking-tighter w-6 h-6 border-2 border-red-500/60 bg-red-500/30 text-red-700 hover:bg-red-500/50 transition-colors flex items-center justify-center"
-                            aria-label="Remove guest"
-                          >
-                            −
-                          </button>
-                        )}
-                      </>
-                    )}
+
+                      {guestToRemove ? (
+                        <div className="flex flex-col gap-4">
+                          <div className="bg-red-50 border-2 border-dashed border-red-200 p-4 text-center">
+                            <p className="text-[11px] uppercase font-bold text-red-600 leading-relaxed">
+                              Are you sure you want to remove{" "}
+                              <span className="bg-red-600 text-white px-1">
+                                {guestToRemove.userName}
+                              </span>
+                              ?
+                            </p>
+                            <p className="text-[9px] uppercase font-bold text-red-600/60 mt-2">
+                              All their claimed items will be cleared.
+                            </p>
+                          </div>
+                          <div className="flex flex-col gap-2">
+                            <button
+                              onClick={async () => {
+                                try {
+                                  await removeGuest({
+                                    receiptId,
+                                    guestId: guestToRemove.userId,
+                                  });
+                                  toast.success(
+                                    `Removed guest: ${guestToRemove.userName}`,
+                                  );
+                                  setGuestToRemove(null);
+                                  setIsRemovingGuest(false);
+                                } catch (err) {
+                                  toast.error("Failed to remove guest");
+                                }
+                              }}
+                              className="w-full bg-red-600 text-white text-[10px] font-black py-3 uppercase hover:bg-red-700 transition-colors shadow-[4px_4px_0px_rgba(0,0,0,0.1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
+                            >
+                              YES, REMOVE GUEST
+                            </button>
+                            <button
+                              onClick={() => setGuestToRemove(null)}
+                              className="w-full border-2 border-ink text-[10px] font-black py-3 uppercase hover:bg-ink hover:text-paper transition-all"
+                            >
+                              BACK TO LIST
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col gap-2">
+                          <p className="text-[9px] uppercase font-bold opacity-40 mb-2 tracking-widest">
+                            Select a guest to remove:
+                          </p>
+                          <div className="flex flex-col gap-1.5 max-h-[200px] overflow-y-auto pr-1">
+                            {receipt.participants
+                              .filter(
+                                (p) =>
+                                  p.isAnonymous &&
+                                  (isHost ||
+                                    (user && p.createdBy === user._id)),
+                              )
+                              .map((p) => (
+                                <button
+                                  key={p.userId}
+                                  onClick={() =>
+                                    setGuestToRemove({
+                                      userId: p.userId,
+                                      userName: p.userName,
+                                    })
+                                  }
+                                  className="group text-[10px] font-bold uppercase tracking-tighter px-3 py-2.5 border-2 border-ink/10 hover:border-red-600 hover:text-red-600 transition-all text-left flex justify-between items-center bg-paper"
+                                >
+                                  <span>{p.userName}</span>
+                                  <span className="text-[8px] opacity-0 group-hover:opacity-40 font-black">
+                                    SELECT →
+                                  </span>
+                                </button>
+                              ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
-
-              {/* Remove Guest Modal */}
-              {isRemovingGuest && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
-                        <div className="w-full max-w-sm receipt-paper jagged-top jagged-bottom p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-                          <div className="flex justify-between items-center border-b-2 border-ink/10 pb-3 mb-4">
-                            <h3 className="text-xs font-black uppercase tracking-widest">
-                              {guestToRemove ? "Confirm Removal" : "Remove Guest"}
-                            </h3>
-                            <button
-                              onClick={() => {
-                                setIsRemovingGuest(false);
-                                setGuestToRemove(null);
-                              }}
-                              className="text-xs font-bold opacity-50 hover:opacity-100"
-                            >
-                              ✕
-                            </button>
-                          </div>
-
-                          {guestToRemove ? (
-                            <div className="flex flex-col gap-4">
-                              <div className="bg-red-50 border-2 border-dashed border-red-200 p-4 text-center">
-                                <p className="text-[11px] uppercase font-bold text-red-600 leading-relaxed">
-                                  Are you sure you want to remove{" "}
-                                  <span className="bg-red-600 text-white px-1">
-                                    {guestToRemove.userName}
-                                  </span>
-                                  ?
-                                </p>
-                                <p className="text-[9px] uppercase font-bold text-red-600/60 mt-2">
-                                  All their claimed items will be cleared.
-                                </p>
-                              </div>
-                              <div className="flex flex-col gap-2">
-                                <button
-                                  onClick={async () => {
-                                    try {
-                                      await removeGuest({
-                                        receiptId,
-                                        guestId: guestToRemove.userId,
-                                      });
-                                      toast.success(
-                                        `Removed guest: ${guestToRemove.userName}`,
-                                      );
-                                      setGuestToRemove(null);
-                                      setIsRemovingGuest(false);
-                                    } catch (err) {
-                                      toast.error("Failed to remove guest");
-                                    }
-                                  }}
-                                  className="w-full bg-red-600 text-white text-[10px] font-black py-3 uppercase hover:bg-red-700 transition-colors shadow-[4px_4px_0px_rgba(0,0,0,0.1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
-                                >
-                                  YES, REMOVE GUEST
-                                </button>
-                                <button
-                                  onClick={() => setGuestToRemove(null)}
-                                  className="w-full border-2 border-ink text-[10px] font-black py-3 uppercase hover:bg-ink hover:text-paper transition-all"
-                                >
-                                  BACK TO LIST
-                                </button>
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="flex flex-col gap-2">
-                              <p className="text-[9px] uppercase font-bold opacity-40 mb-2 tracking-widest">
-                                Select a guest to remove:
-                              </p>
-                              <div className="flex flex-col gap-1.5 max-h-[200px] overflow-y-auto pr-1">
-                                {receipt.participants
-                                  .filter(
-                                    (p) =>
-                                      p.isAnonymous &&
-                                      (isHost ||
-                                        (user && p.createdBy === user._id)),
-                                  )
-                                  .map((p) => (
-                                    <button
-                                      key={p.userId}
-                                      onClick={() =>
-                                        setGuestToRemove({
-                                          userId: p.userId,
-                                          userName: p.userName,
-                                        })
-                                      }
-                                      className="group text-[10px] font-bold uppercase tracking-tighter px-3 py-2.5 border-2 border-ink/10 hover:border-red-600 hover:text-red-600 transition-all text-left flex justify-between items-center bg-paper"
-                                    >
-                                      <span>{p.userName}</span>
-                                      <span className="text-[8px] opacity-0 group-hover:opacity-40 font-black">
-                                        SELECT →
-                                      </span>
-                                    </button>
-                                  ))}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-            </div>
-          )}
+            )}
         </div>
 
         {/* Image Section */}
@@ -1026,10 +1053,13 @@ export default function ReceiptDetailPage() {
                                     type="number"
                                     step="0.01"
                                     value={editValue}
-                                    onChange={(e) => setEditValue(e.target.value)}
+                                    onChange={(e) =>
+                                      setEditValue(e.target.value)
+                                    }
                                     onKeyDown={(e) => {
                                       if (e.key === "Enter") handleSaveEdit();
-                                      if (e.key === "Escape") setEditingId(null);
+                                      if (e.key === "Escape")
+                                        setEditingId(null);
                                     }}
                                     className="w-20 bg-transparent border-b border-ink outline-none text-right font-mono"
                                   />
@@ -1080,10 +1110,28 @@ export default function ReceiptDetailPage() {
                                   </span>
                                   {isEditMode && (
                                     <button
-                                      onClick={() => handleStartEdit(item._id, item.priceCents)}
+                                      onClick={() =>
+                                        handleStartEdit(
+                                          item._id,
+                                          item.priceCents,
+                                        )
+                                      }
                                       className="opacity-50 hover:opacity-100 transition-opacity text-red-600"
                                     >
-                                      <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                                      <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        width="10"
+                                        height="10"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                      >
+                                        <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                                        <path d="m15 5 4 4" />
+                                      </svg>
                                     </button>
                                   )}
                                 </div>
@@ -1105,9 +1153,7 @@ export default function ReceiptDetailPage() {
                                     : "border-dotted border-ink/40 text-ink/60 hover:border-solid hover:border-ink hover:text-ink"
                                 }`}
                               >
-                                {isClaimedByUser
-                                  ? "UNCLAIM"
-                                  : "CLAIM"}
+                                {isClaimedByUser ? "UNCLAIM" : "CLAIM"}
                               </button>
                               <button
                                 onClick={() =>
@@ -1293,7 +1339,9 @@ export default function ReceiptDetailPage() {
               {isParsed && isTotalMismatch && isHost && (
                 <div className="mb-4 bg-red-50 border-2 border-dashed border-red-400 flex flex-col animate-in fade-in slide-in-from-top-2">
                   <button
-                    onClick={() => setIsPriceMismatchCollapsed(!isPriceMismatchCollapsed)}
+                    onClick={() =>
+                      setIsPriceMismatchCollapsed(!isPriceMismatchCollapsed)
+                    }
                     className="p-4 flex items-center justify-between gap-2 text-red-600 hover:bg-red-100 transition-colors cursor-pointer"
                   >
                     <div className="flex items-center gap-2">
@@ -1313,8 +1361,8 @@ export default function ReceiptDetailPage() {
                         <line x1="12" y1="17" x2="12.01" y2="17" />
                       </svg>
                       <p className="text-[10px] uppercase font-bold leading-relaxed">
-                    [ ATTENTION: PRICE MISMATCH ]
-                  </p>
+                        [ ATTENTION: PRICE MISMATCH ]
+                      </p>
                     </div>
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -1333,15 +1381,19 @@ export default function ReceiptDetailPage() {
                   </button>
                   {!isPriceMismatchCollapsed && (
                     <div className="px-4 pb-4 text-center">
-                  <p className="text-[9px] uppercase font-medium text-red-600/70 mt-1">
-                    Sum of items ({formatCurrency(totalSubtotalCents)}) + Tax ({formatCurrency(receipt.taxCents)}) + Tip ({formatCurrency(receipt.tipCents)}) = **{formatCurrency(calculatedTotalCents)}**
-                  </p>
-                  <p className="text-[9px] uppercase font-bold text-red-600 mt-2">
-                    Does not equal receipt total: **{formatCurrency(receipt.totalCents)}**
-                  </p>
-                  <p className="text-[8px] uppercase font-bold text-red-600/50 mt-1">
-                    Please check and edit prices to match.
-                  </p>
+                      <p className="text-[9px] uppercase font-medium text-red-600/70 mt-1">
+                        Sum of items ({formatCurrency(totalSubtotalCents)}) +
+                        Tax ({formatCurrency(receipt.taxCents)}) + Tip (
+                        {formatCurrency(receipt.tipCents)}) = **
+                        {formatCurrency(calculatedTotalCents)}**
+                      </p>
+                      <p className="text-[9px] uppercase font-bold text-red-600 mt-2">
+                        Does not equal receipt total: **
+                        {formatCurrency(receipt.totalCents)}**
+                      </p>
+                      <p className="text-[8px] uppercase font-bold text-red-600/50 mt-1">
+                        Please check and edit prices to match.
+                      </p>
                     </div>
                   )}
                 </div>
@@ -1422,10 +1474,25 @@ export default function ReceiptDetailPage() {
                       <span>{formatCurrency(receipt.taxCents)}</span>
                       {isEditMode && (
                         <button
-                          onClick={() => handleStartEdit("tax", receipt.taxCents)}
+                          onClick={() =>
+                            handleStartEdit("tax", receipt.taxCents)
+                          }
                           className="opacity-50 hover:opacity-100 transition-opacity text-red-600"
                         >
-                          <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="10"
+                            height="10"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                            <path d="m15 5 4 4" />
+                          </svg>
                         </button>
                       )}
                     </>
@@ -1583,53 +1650,134 @@ export default function ReceiptDetailPage() {
                       <span>{formatCurrency(receipt.totalCents)}</span>
                       {isEditMode && (
                         <button
-                          onClick={() => handleStartEdit("total", receipt.totalCents)}
+                          onClick={() =>
+                            handleStartEdit("total", receipt.totalCents)
+                          }
                           className="opacity-50 hover:opacity-100 transition-opacity text-red-600"
                         >
-                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                            <path d="m15 5 4 4" />
+                          </svg>
                         </button>
                       )}
                     </>
                   )}
                 </div>
               </div>
+              {isParsed && user && (
+                <div className="flex flex-col gap-4 mt-4">
+            <Link
+              href={`/receipts/${receiptId}/${user._id}`}
+              className="w-full bg-ink text-paper border-2 border-ink py-3 text-xs font-bold uppercase tracking-[0.2em] text-center hover:opacity-90 transition-all"
+            >
+              VIEW YOUR PERSONAL RECEIPT
+            </Link>
+                </div>
+              )}
 
               {/* Participant Ledger (Host Only) */}
               {isHost &&
                 receipt.participants &&
                 receipt.participants.length > 1 && (
-                  <div className="mt-8 pt-6 border-t-2 border-dashed border-ink/10">
-                    <h3 className="text-[10px] font-bold uppercase tracking-widest mb-4 opacity-50 text-center">
-                      — Participant Ledger —
-                    </h3>
-                    <div className="flex flex-col gap-3">
+                  <div className="mt-2">
+                    <button
+                      onClick={() => setIsLedgerModalOpen(true)}
+                      className="w-full border-2 border-ink py-3 text-xs font-bold uppercase tracking-[0.2em] text-center hover:bg-ink hover:text-paper transition-all"
+                    >
+                      VIEW PARTICIPANT LEDGER
+                    </button>
+                  </div>
+                )}
+
+              {/* Participant Ledger Modal */}
+              {isLedgerModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
+                  <div className="w-full max-w-md receipt-paper jagged-top jagged-bottom p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200 overflow-y-auto max-h-[90vh]">
+                    <div className="flex justify-between items-center border-b-2 border-ink/10 pb-3 mb-6">
+                      <h3 className="text-xs font-black uppercase tracking-[0.2em]">
+                        Participant Ledger
+                      </h3>
+                      <button
+                        onClick={() => setIsLedgerModalOpen(false)}
+                        className="text-xs font-bold opacity-50 hover:opacity-100"
+                      >
+                        ✕
+                      </button>
+                    </div>
+
+                    <div className="flex flex-col gap-2">
                       {receipt.participants.map((p) => {
                         const userTotal = calculateUserTotal(p.userId);
+                        const isExpanded = expandedLedgerUserId === p.userId;
                         return (
                           <div
                             key={p.userId}
-                            className="flex justify-between items-center group gap-2 min-w-0"
+                            className="flex flex-col border-b border-ink/5 pb-2"
                           >
-                            <div className="flex flex-col min-w-0 flex-1">
-                              <span className="text-[11px] font-bold uppercase truncate">
-                                {p.userId === user?._id ? "You (Host)" : truncateName(p.userName, 20)}
-                                {p.isAnonymous && (
-                                  <span className="ml-1 text-[8px] opacity-40 whitespace-nowrap">
-                                    [GUEST]
-                                  </span>
-                                )}
-                              </span>
+                            <div className="flex justify-between items-center group gap-4 min-w-0">
+                              <div className="flex flex-col min-w-0 flex-1">
+                                <span className="text-[11px] font-bold uppercase truncate">
+                                  {p.userId === user?._id
+                                    ? "You (Host)"
+                                    : truncateName(p.userName, 20)}
+                                  {p.isAnonymous && (
+                                    <span className="ml-1 text-[8px] opacity-40 whitespace-nowrap">
+                                      [GUEST]
+                                    </span>
+                                  )}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-3 flex-shrink-0">
+                                <span className="text-[11px] font-mono font-bold whitespace-nowrap">
+                                  {formatCurrency(userTotal)}
+                                </span>
+                                <button
+                                  onClick={() =>
+                                    setExpandedLedgerUserId(
+                                      isExpanded ? null : p.userId,
+                                    )
+                                  }
+                                  className={`p-1 hover:bg-ink/5 transition-colors ${isExpanded ? "bg-ink/5" : ""}`}
+                                >
+                                  <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="14"
+                                    height="14"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="3"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    className="opacity-40"
+                                  >
+                                    <circle cx="12" cy="12" r="1" />
+                                    <circle cx="19" cy="12" r="1" />
+                                    <circle cx="5" cy="12" r="1" />
+                                  </svg>
+                                </button>
+                              </div>
                             </div>
-                            <div className="flex items-center gap-4 flex-shrink-0">
-                              <span className="text-[11px] font-mono font-bold whitespace-nowrap">
-                                {formatCurrency(userTotal)}
-                              </span>
-                              <div className="flex gap-2 flex-shrink-0">
+
+                            {/* Collapsible Actions */}
+                            {isExpanded && (
+                              <div className="flex gap-2 mt-2 animate-in fade-in slide-in-from-top-1 duration-200">
                                 <Link
                                   href={`/receipts/${receiptId}/${p.userId}`}
-                                  className="text-[9px] font-bold uppercase underline opacity-30 hover:opacity-100 transition-opacity"
+                                  className="flex-1 text-center py-2.5 border-2 border-ink/20 text-[9px] font-bold uppercase hover:bg-ink hover:text-paper transition-all"
                                 >
-                                  [ VIEW ]
+                                  VIEW RECEIPT
                                 </Link>
                                 {p.userId !== user?._id && (
                                   <button
@@ -1640,30 +1788,40 @@ export default function ReceiptDetailPage() {
                                         `Link for ${p.userName} copied!`,
                                       );
                                     }}
-                                    className="text-[9px] font-bold uppercase underline opacity-30 hover:opacity-100 transition-opacity whitespace-nowrap"
+                                    className="flex-1 text-center py-2.5 border-2 border-ink/20 text-[9px] font-bold uppercase hover:bg-ink hover:text-paper transition-all"
                                   >
-                                    [ COPY LINK ]
+                                    COPY STATEMENT LINK
                                   </button>
                                 )}
                               </div>
-                            </div>
+                            )}
                           </div>
                         );
                       })}
                       {/* Show unclaimd amount if any */}
                       {totalSubtotalCents > claimedAmountCents && (
-                        <div className="flex justify-between items-center pt-2 mt-2 border-t border-ink/5 italic">
+                        <div className="flex justify-between items-center pt-2 mt-1 italic">
                           <span className="text-[10px] uppercase opacity-40">
                             Unclaimed Items
                           </span>
                           <span className="text-[10px] font-mono opacity-40 underline">
-                            {formatCurrency(totalSubtotalCents - claimedAmountCents)}
+                            {formatCurrency(
+                              totalSubtotalCents - claimedAmountCents,
+                            )}
                           </span>
                         </div>
                       )}
                     </div>
+
+                    <button
+                      onClick={() => setIsLedgerModalOpen(false)}
+                      className="w-full mt-8 bg-ink text-paper text-[10px] font-black py-3 uppercase hover:opacity-90 transition-opacity"
+                    >
+                      CLOSE LEDGER
+                    </button>
                   </div>
-                )}
+                </div>
+              )}
             </div>
           </div>
         ) : (
@@ -1680,17 +1838,6 @@ export default function ReceiptDetailPage() {
                 Preparing to parse...
               </p>
             )}
-          </div>
-        )}
-
-        {isParsed && user && (
-          <div className="flex flex-col gap-4 mt-4">
-            <Link
-              href={`/receipts/${receiptId}/${user._id}`}
-              className="w-full border-2 border-ink py-3 text-xs font-bold uppercase tracking-[0.2em] text-center hover:bg-ink hover:text-paper transition-all"
-            >
-              VIEW YOUR PERSONAL RECEIPT
-            </Link>
           </div>
         )}
 
