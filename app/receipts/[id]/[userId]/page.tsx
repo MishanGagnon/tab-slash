@@ -24,6 +24,7 @@ export default function PersonalReceiptPage() {
   const [isMobile, setIsMobile] = useState(false);
   const [isZelleModalOpen, setIsZelleModalOpen] = useState(false);
   const [zelleUsdAmount, setZelleUsdAmount] = useState<string>("");
+  const [isTipWarningCollapsed, setIsTipWarningCollapsed] = useState(false);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -53,19 +54,26 @@ export default function PersonalReceiptPage() {
   };
 
   // Convert amount from receipt currency to USD
-  const convertToUSD = async (amountCents: number, fromCurrency: string): Promise<number> => {
+  const convertToUSD = async (
+    amountCents: number,
+    fromCurrency: string,
+  ): Promise<number> => {
     if (fromCurrency === "USD" || !fromCurrency) {
       return amountCents;
     }
 
     try {
       // Use ExchangeRate-API free endpoint (no API key required for basic usage)
-      const response = await fetch(`https://api.exchangerate-api.com/v4/latest/${fromCurrency}`);
+      const response = await fetch(
+        `https://api.exchangerate-api.com/v4/latest/${fromCurrency}`,
+      );
       const data = await response.json();
       const exchangeRate = data.rates?.USD;
-      
+
       if (!exchangeRate) {
-        console.warn(`Exchange rate not found for ${fromCurrency}, using original amount`);
+        console.warn(
+          `Exchange rate not found for ${fromCurrency}, using original amount`,
+        );
         return amountCents;
       }
 
@@ -227,12 +235,15 @@ export default function PersonalReceiptPage() {
     }
 
     const receiptCurrency = receipt.currency || "USD";
-    const usdAmountCents = await convertToUSD(personalTotalCents, receiptCurrency);
+    const usdAmountCents = await convertToUSD(
+      personalTotalCents,
+      receiptCurrency,
+    );
     const amount = (usdAmountCents / 100).toFixed(2);
     const merchant = receipt.merchantName || "Receipt";
     const note = encodeURIComponent(`Split for ${merchant}`);
     const venmoUrl = `venmo://paycharge?txn=pay&recipients=${receipt.hostVenmoUsername}&amount=${amount}&note=${note}`;
-    
+
     window.location.href = venmoUrl;
   };
 
@@ -243,7 +254,10 @@ export default function PersonalReceiptPage() {
     }
 
     const receiptCurrency = receipt.currency || "USD";
-    const usdAmountCents = await convertToUSD(personalTotalCents, receiptCurrency);
+    const usdAmountCents = await convertToUSD(
+      personalTotalCents,
+      receiptCurrency,
+    );
     const amount = (usdAmountCents / 100).toFixed(2);
     const merchant = receipt.merchantName || "Receipt";
     const note = encodeURIComponent(`Split for ${merchant}`);
@@ -257,10 +271,13 @@ export default function PersonalReceiptPage() {
       toast.error("Host hasn't set up their Zelle info yet.");
       return;
     }
-    
+
     // Convert to USD before opening modal
     const receiptCurrency = receipt.currency || "USD";
-    const usdAmountCents = await convertToUSD(personalTotalCents, receiptCurrency);
+    const usdAmountCents = await convertToUSD(
+      personalTotalCents,
+      receiptCurrency,
+    );
     const usdAmount = `$${(usdAmountCents / 100).toFixed(2)}`;
     setZelleUsdAmount(usdAmount);
     setIsZelleModalOpen(true);
@@ -320,7 +337,9 @@ export default function PersonalReceiptPage() {
             </span>
             <span className="text-[10px] text-ink/70 font-normal uppercase tracking-wide">
               PAY TO HOST's {props.label.toUpperCase()} ID:{" "}
-              <span className="font-extrabold underline text-ink/90">{props.handle}</span>
+              <span className="font-extrabold underline text-ink/90">
+                {props.handle}
+              </span>
             </span>
           </div>
           <div className="flex-shrink-0">
@@ -358,7 +377,7 @@ export default function PersonalReceiptPage() {
     { id: "venmo", exists: !!receipt.hostVenmoUsername },
     { id: "cashapp", exists: !!receipt.hostCashAppUsername },
     { id: "zelle", exists: !!receipt.hostZellePhone },
-  ].filter(m => m.exists);
+  ].filter((m) => m.exists);
 
   const preferredMethod = receipt.hostPreferredPaymentMethod || "venmo";
 
@@ -405,32 +424,57 @@ export default function PersonalReceiptPage() {
         <div className="flex flex-col gap-6">
           {/* Tip Confirmation Warning */}
           {receipt && shouldShowTipConfirmation() && (
-            <div className="bg-yellow-50 border-2 border-yellow-200 p-4 flex flex-col gap-2">
-              <div className="flex items-center gap-2 text-yellow-700">
+            <div className="bg-yellow-50 border-2 border-yellow-200 flex flex-col">
+              <button
+                onClick={() => setIsTipWarningCollapsed(!isTipWarningCollapsed)}
+                className="p-4 flex items-center justify-between gap-2 text-yellow-700 hover:bg-yellow-100 transition-colors cursor-pointer"
+              >
+                <div className="flex items-center gap-2">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                    <line x1="12" y1="9" x2="12" y2="13" />
+                    <line x1="12" y1="17" x2="12.01" y2="17" />
+                  </svg>
+                  <p className="text-[10px] font-bold uppercase tracking-widest">
+                    Tip Not Confirmed
+                  </p>
+                </div>
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
+                  width="14"
+                  height="14"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="2"
                   strokeLinecap="round"
                   strokeLinejoin="round"
+                  className={`transition-transform ${isTipWarningCollapsed ? "" : "rotate-180"}`}
                 >
-                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                  <line x1="12" y1="9" x2="12" y2="13" />
-                  <line x1="12" y1="17" x2="12.01" y2="17" />
+                  <path d="M6 9l6 6 6-6" />
                 </svg>
-                <p className="text-[10px] font-bold uppercase tracking-widest">
-                  Tip Not Confirmed
-                </p>
-              </div>
-              <p className="text-[10px] uppercase leading-relaxed text-yellow-600 font-medium">
-                The host has not yet confirmed the final tip amount. Please wait
-                for confirmation before settling your payment to ensure the
-                total is accurate.
-              </p>
+              </button>
+              {!isTipWarningCollapsed && (
+                <div className="px-4 pb-4">
+                  <p className="text-[10px] uppercase leading-relaxed text-yellow-600 font-medium">
+                    <strong>
+                      The host has not yet confirmed the final tip amount
+                    </strong>
+                    . Please wait for confirmation before settling your payment to
+                    ensure the total is accurate.
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
@@ -438,7 +482,7 @@ export default function PersonalReceiptPage() {
           <div className="flex flex-col gap-4">
             {/* Claimed Progress Bar */}
             {totalSubtotalCents > 0 && (
-              <div className="flex flex-col gap-2 w-full">
+              <div className="flex flex-col gap-1 w-full">
                 <ClaimedProgressBar
                   claimedAmountCents={claimedAmountCents}
                   totalAmountCents={totalSubtotalCents}
@@ -451,14 +495,14 @@ export default function PersonalReceiptPage() {
 
             <div className="flex items-center gap-2">
               <div className="flex-1 border-t border-ink/20 border-dashed"></div>
-              <h3 className="text-[10px] font-bold uppercase tracking-widest text-center whitespace-nowrap opacity-70">
+              <h3 className="text-[9px] font-bold uppercase tracking-widest text-center whitespace-nowrap opacity-70">
                 Your Items
               </h3>
               <div className="flex-1 border-t border-ink/20 border-dashed"></div>
             </div>
 
             {personalItems.length > 0 ? (
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-2">
                 {personalItems.map((item) => {
                   const itemSubtotal =
                     (item.priceCents || 0) +
@@ -517,20 +561,20 @@ export default function PersonalReceiptPage() {
           </div> */}
 
           {/* Summary */}
-          <div className="flex flex-col gap-2 mt-4">
-            <div className="receipt-item-row text-xs uppercase opacity-70">
+          <div className="flex flex-col gap-1 mt-2">
+            <div className="receipt-item-row text-[10px] uppercase opacity-70">
               <span>Your Subtotal</span>
               <span>{formatCurrency(personalSubtotalCents)}</span>
             </div>
-            <div className="receipt-item-row text-xs uppercase opacity-70">
+            <div className="receipt-item-row text-[10px] uppercase opacity-70">
               <span>Your Share of Tax</span>
               <span>{formatCurrency(personalTaxCents)}</span>
             </div>
-            <div className="receipt-item-row text-xs uppercase opacity-70">
+            <div className="receipt-item-row text-[10px] uppercase opacity-70">
               <span>Your Share of Tip</span>
               <span>{formatCurrency(personalTipCents)}</span>
             </div>
-            <div className="receipt-item-row text-lg font-bold uppercase mt-2 border-t-4 border-ink/10 pt-2">
+            <div className="receipt-item-row text-sm font-bold uppercase mt-1 border-t-2 border-ink/10 pt-1">
               <span>Your Total</span>
               <span>{formatCurrency(personalTotalCents)}</span>
             </div>
@@ -538,10 +582,10 @@ export default function PersonalReceiptPage() {
 
           {/* Payment Buttons - Mobile Only - Hide if user is host */}
           {isMobile && personalTotalCents > 0 && !isHost && (
-            <div className="flex flex-col gap-6 mt-4">
+            <div className="flex flex-col gap-4 mt-4">
               <div className="flex items-center gap-2">
                 <div className="flex-1 border-t border-ink/20 border-dashed"></div>
-                <h3 className="text-[10px] font-bold uppercase tracking-widest text-center whitespace-nowrap opacity-70">
+                <h3 className="text-[9px] font-bold uppercase tracking-widest text-center whitespace-nowrap opacity-70">
                   Payment Options
                 </h3>
                 <div className="flex-1 border-t border-ink/20 border-dashed"></div>
@@ -551,12 +595,11 @@ export default function PersonalReceiptPage() {
                 <div className="flex flex-col gap-4">
                   {/* Render preferred method first */}
                   {renderPaymentButton(preferredMethod, true)}
-                  
+
                   {/* Render others */}
                   {availableMethods
-                    .filter(m => m.id !== preferredMethod)
-                    .map(m => renderPaymentButton(m.id, false))
-                  }
+                    .filter((m) => m.id !== preferredMethod)
+                    .map((m) => renderPaymentButton(m.id, false))}
                 </div>
               ) : (
                 <p className="text-[10px] uppercase opacity-40 text-center italic py-4">
@@ -567,7 +610,7 @@ export default function PersonalReceiptPage() {
           )}
           {/* Alternative content for host */}
           {isHost && (
-            <div className="flex flex-col gap-3 mt-4">
+            <div className="flex flex-col gap-2 mt-4">
               {/* Option 1: Payment Summary */}
               <div className="border-2 border-ink/20 p-4 bg-paper/50 flex flex-col gap-2">
                 <h4 className="text-[12px] font-bold uppercase tracking-wider opacity-70">
