@@ -1153,6 +1153,81 @@ export const confirmTip = mutation({
 });
 
 /**
+ * Mutation to update the price of a specific receipt item.
+ * Only the host can perform this action.
+ */
+export const updateItemPrice = mutation({
+  args: {
+    itemId: v.id("receiptItems"),
+    priceCents: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("Unauthorized");
+    }
+
+    const item = await ctx.db.get(args.itemId);
+    if (!item) {
+      throw new Error("Item not found");
+    }
+
+    const receipt = await ctx.db.get(item.receiptId);
+    if (!receipt) {
+      throw new Error("Receipt not found");
+    }
+
+    if (receipt.hostUserId !== userId) {
+      throw new Error("Unauthorized: Only the host can edit item prices");
+    }
+
+    await ctx.db.patch(args.itemId, {
+      priceCents: args.priceCents,
+    });
+  },
+});
+
+/**
+ * Mutation to update the overall receipt amounts (total, tax, tip).
+ * Only the host can perform this action.
+ */
+export const updateReceiptAmount = mutation({
+  args: {
+    receiptId: v.id("receipts"),
+    totalCents: v.optional(v.number()),
+    taxCents: v.optional(v.number()),
+    tipCents: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("Unauthorized");
+    }
+
+    const receipt = await ctx.db.get(args.receiptId);
+    if (!receipt) {
+      throw new Error("Receipt not found");
+    }
+
+    if (receipt.hostUserId !== userId) {
+      throw new Error("Unauthorized: Only the host can edit receipt amounts");
+    }
+
+    const patch: {
+      totalCents?: number;
+      taxCents?: number;
+      tipCents?: number;
+    } = {};
+
+    if (args.totalCents !== undefined) patch.totalCents = args.totalCents;
+    if (args.taxCents !== undefined) patch.taxCents = args.taxCents;
+    if (args.tipCents !== undefined) patch.tipCents = args.tipCents;
+
+    await ctx.db.patch(args.receiptId, patch);
+  },
+});
+
+/**
  * Get image data with receipt info (if parsed) for the detail page.
  */
 export const getImageWithReceipt = query({

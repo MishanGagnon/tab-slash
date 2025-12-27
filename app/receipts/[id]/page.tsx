@@ -41,6 +41,8 @@ export default function ReceiptDetailPage() {
   const getOrCreateShareCode = useMutation(api.share.getOrCreateShareCode);
   const confirmTip = useMutation(api.receipt.confirmTip);
   const splitWithAll = useMutation(api.receipt.splitItemWithAll);
+  const updateItemPrice = useMutation(api.receipt.updateItemPrice);
+  const updateReceiptAmount = useMutation(api.receipt.updateReceiptAmount);
 
   const [isJoining, setIsJoining] = useState(false);
   const [shareCode, setShareCode] = useState<string | null>(null);
@@ -59,6 +61,11 @@ export default function ReceiptDetailPage() {
     userId: Id<"users">;
     userName: string;
   } | null>(null);
+
+  // Editing state
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null); // "tax", "total", or itemId
+  const [editValue, setEditValue] = useState("");
 
   const tipSectionRef = useRef<HTMLDivElement>(null);
   const shareCodeRequestedRef = useRef(false);
@@ -81,6 +88,38 @@ export default function ReceiptDetailPage() {
       toast.error("Failed to generate share code");
     } finally {
       setIsGeneratingCode(false);
+    }
+  };
+
+  const handleStartEdit = (id: string, currentCents: number | undefined) => {
+    setEditingId(id);
+    setEditValue(currentCents !== undefined ? (currentCents / 100).toFixed(2) : "0.00");
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingId) return;
+
+    const cents = Math.round(parseFloat(editValue) * 100);
+    if (isNaN(cents)) {
+      toast.error("Invalid amount");
+      return;
+    }
+
+    try {
+      if (editingId === "tax") {
+        await updateReceiptAmount({ receiptId, taxCents: cents });
+      } else if (editingId === "total") {
+        await updateReceiptAmount({ receiptId, totalCents: cents });
+      } else {
+        await updateItemPrice({ itemId: editingId as Id<"receiptItems">, priceCents: cents });
+      }
+      toast.success("Amount updated");
+    } catch (error) {
+      console.error("Failed to update amount:", error);
+      toast.error("Failed to update amount");
+    } finally {
+      setEditingId(null);
+      setEditValue("");
     }
   };
 
@@ -302,6 +341,9 @@ export default function ReceiptDetailPage() {
       (item.modifiers?.reduce((s, m) => s + (m.priceCents || 0), 0) || 0)
     );
   }, 0);
+
+  const calculatedTotalCents = totalSubtotalCents + (receipt?.taxCents || 0) + (receipt?.tipCents || 0);
+  const isTotalMismatch = receipt?.totalCents !== undefined && Math.abs(calculatedTotalCents - receipt.totalCents) > 1; // 1 cent buffer for rounding
 
   // Helper to calculate total for a specific user
   const calculateUserTotal = (targetUserId: Id<"users">) => {
@@ -895,6 +937,19 @@ export default function ReceiptDetailPage() {
                 <div className="flex-1 border-t border-ink/20 border-dashed"></div>
               </div>
 
+              {isHost && (
+                <div className="flex justify-end -mt-3">
+                  <button
+                    onClick={() => setIsEditMode(!isEditMode)}
+                    className={`text-[9px] font-bold uppercase underline hover:opacity-100 cursor-pointer whitespace-nowrap transition-all ${
+                      isEditMode ? "text-red-600 opacity-100" : "opacity-40"
+                    }`}
+                  >
+                    [ {isEditMode ? "DONE EDITING" : "EDIT PRICES"} ]
+                  </button>
+                </div>
+              )}
+
               {items.length > 0 ? (
                 <div className="flex flex-col gap-4">
                   {items.map((item) => {
@@ -923,9 +978,40 @@ export default function ReceiptDetailPage() {
                                 {item.name}
                               </span>
                             </div>
-                            <span className="text-right font-semi-bold pl-6 sm:order-3 sm:font-normal">
-                              {formatCurrency(totalItemPriceCents)}
-                            </span>
+                            <div className="flex flex-col items-end sm:contents">
+                              {editingId === item._id ? (
+                                <div className="flex items-center gap-1 sm:order-3">
+                                  <input
+                                    autoFocus
+                                    type="number"
+                                    step="0.01"
+                                    value={editValue}
+                                    onChange={(e) => setEditValue(e.target.value)}
+                                    onKeyDown={(e) => {
+                                      if (e.key === "Enter") handleSaveEdit();
+                                      if (e.key === "Escape") setEditingId(null);
+                                    }}
+                                    className="w-20 bg-transparent border-b border-ink outline-none text-right font-mono"
+                                  />
+                                  <button onClick={handleSaveEdit} className="text-[10px] font-bold">✓</button>
+                                  <button onClick={() => setEditingId(null)} className="text-[10px] font-bold">✕</button>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-1 sm:order-3">
+                                  <span className="text-right font-semi-bold pl-6 sm:font-normal">
+                                    {formatCurrency(totalItemPriceCents)}
+                                  </span>
+                                  {isEditMode && (
+                                    <button
+                                      onClick={() => handleStartEdit(item._id, item.priceCents)}
+                                      className="opacity-50 hover:opacity-100 transition-opacity text-red-600"
+                                    >
+                                      <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                                    </button>
+                                  )}
+                                </div>
+                              )}
+                            </div>
                           </div>
 
                           {/* Sub-section: Modifiers, Actions, Claimants (Indented on Mobile) */}
@@ -1127,6 +1213,22 @@ export default function ReceiptDetailPage() {
 
             {/* Summary */}
             <div className="flex flex-col gap-2">
+              {isParsed && isTotalMismatch && isHost && (
+                <div className="mb-4 bg-red-50 border-2 border-dashed border-red-400 p-4 text-center animate-in fade-in slide-in-from-top-2">
+                  <p className="text-[10px] uppercase font-bold text-red-600 leading-relaxed">
+                    [ ATTENTION: PRICE MISMATCH ]
+                  </p>
+                  <p className="text-[9px] uppercase font-medium text-red-600/70 mt-1">
+                    Sum of items ({formatCurrency(totalSubtotalCents)}) + Tax ({formatCurrency(receipt.taxCents)}) + Tip ({formatCurrency(receipt.tipCents)}) = **{formatCurrency(calculatedTotalCents)}**
+                  </p>
+                  <p className="text-[9px] uppercase font-bold text-red-600 mt-2">
+                    Does not equal receipt total: **{formatCurrency(receipt.totalCents)}**
+                  </p>
+                  <p className="text-[8px] uppercase font-bold text-red-600/50 mt-1">
+                    Please check and edit prices to match.
+                  </p>
+                </div>
+              )}
               {isParsed && totalSubtotalCents > 0 && (
                 <div className="mb-2">
                   <ClaimedProgressBar
@@ -1142,7 +1244,38 @@ export default function ReceiptDetailPage() {
               </div>
               <div className="receipt-item-row text-xs uppercase opacity-70">
                 <span>Tax</span>
-                <span>{formatCurrency(receipt.taxCents)}</span>
+                <div className="flex items-center gap-1">
+                  {editingId === "tax" ? (
+                    <div className="flex items-center gap-1">
+                      <input
+                        autoFocus
+                        type="number"
+                        step="0.01"
+                        value={editValue}
+                        onChange={(e) => setEditValue(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") handleSaveEdit();
+                          if (e.key === "Escape") setEditingId(null);
+                        }}
+                        className="w-20 bg-transparent border-b border-ink outline-none text-right font-mono"
+                      />
+                      <button onClick={handleSaveEdit} className="text-[10px] font-bold">✓</button>
+                      <button onClick={() => setEditingId(null)} className="text-[10px] font-bold">✕</button>
+                    </div>
+                  ) : (
+                    <>
+                      <span>{formatCurrency(receipt.taxCents)}</span>
+                      {isEditMode && (
+                        <button
+                          onClick={() => handleStartEdit("tax", receipt.taxCents)}
+                          className="opacity-50 hover:opacity-100 transition-opacity text-red-600"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                        </button>
+                      )}
+                    </>
+                  )}
+                </div>
               </div>
               <div
                 className="receipt-item-row text-xs uppercase opacity-70"
@@ -1235,7 +1368,38 @@ export default function ReceiptDetailPage() {
 
               <div className="receipt-item-row text-lg font-bold uppercase mt-2 border-t-4 border-ink/10 pt-2">
                 <span>Total</span>
-                <span>{formatCurrency(receipt.totalCents)}</span>
+                <div className="flex items-center gap-2">
+                  {editingId === "total" ? (
+                    <div className="flex items-center gap-1">
+                      <input
+                        autoFocus
+                        type="number"
+                        step="0.01"
+                        value={editValue}
+                        onChange={(e) => setEditValue(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") handleSaveEdit();
+                          if (e.key === "Escape") setEditingId(null);
+                        }}
+                        className="w-24 bg-transparent border-b border-ink outline-none text-right font-mono"
+                      />
+                      <button onClick={handleSaveEdit} className="text-[10px] font-bold">✓</button>
+                      <button onClick={() => setEditingId(null)} className="text-[10px] font-bold">✕</button>
+                    </div>
+                  ) : (
+                    <>
+                      <span>{formatCurrency(receipt.totalCents)}</span>
+                      {isEditMode && (
+                        <button
+                          onClick={() => handleStartEdit("total", receipt.totalCents)}
+                          className="opacity-50 hover:opacity-100 transition-opacity text-red-600"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                        </button>
+                      )}
+                    </>
+                  )}
+                </div>
               </div>
 
               {/* Participant Ledger (Host Only) */}
