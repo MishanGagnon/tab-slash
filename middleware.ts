@@ -6,7 +6,7 @@ import {
 import { NextResponse } from "next/server";
 
 const isSignInPage = createRouteMatcher(["/signin"]);
-const isProtectedRoute = createRouteMatcher(["/", "/server", "/receipts(.*)"]);
+const isProtectedRoute = createRouteMatcher(["/", "/server", "/profile"]);
 
 export default convexAuthNextjsMiddleware(async (request, { convexAuth }) => {
   const isAuthenticated = await convexAuth.isAuthenticated();

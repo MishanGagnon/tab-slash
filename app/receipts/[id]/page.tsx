@@ -528,6 +528,35 @@ export default function ReceiptDetailPage() {
         </div>
       )}
 
+      {/* Login Prompt Modal (for unauthenticated users) */}
+      {user === null && isParsed && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
+          <div className="w-full max-w-sm receipt-paper jagged-top jagged-bottom p-6 sm:p-8 flex flex-col gap-6 shadow-2xl">
+            <div className="text-center space-y-4">
+              <h2 className="text-lg font-bold uppercase tracking-widest">
+                Sign in to View
+              </h2>
+              <p className="text-xs uppercase opacity-60 leading-relaxed">
+                To view this split and participate, you'll need to sign in first.
+              </p>
+            </div>
+            <div className="dotted-line"></div>
+            <div className="flex flex-col gap-4">
+              <button
+                onClick={() => {
+                  const url = new URL("/signin", window.location.href);
+                  url.searchParams.set("redirectTo", window.location.pathname);
+                  router.push(url.pathname + url.search);
+                }}
+                className="bg-ink text-paper py-4 text-xs font-bold uppercase tracking-widest hover:opacity-90 transition-all"
+              >
+                {">>"} GO TO SIGN IN {"<<"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="w-full max-w-lg receipt-paper jagged-top jagged-bottom p-6 sm:p-8 flex flex-col gap-4">
         {/* Header */}
         <div className="flex flex-col items-center gap-3">
