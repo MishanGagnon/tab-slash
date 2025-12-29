@@ -2,6 +2,11 @@ import Home from "./inner";
 import { preloadQuery, preloadedQueryResult } from "convex/nextjs";
 import { api } from "@/convex/_generated/api";
 import Image from "next/image";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Server Demo",
+};
 
 export default async function ServerPage() {
   const preloaded = await preloadQuery(api.myFunctions.listNumbers, {

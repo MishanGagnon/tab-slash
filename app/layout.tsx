@@ -15,7 +15,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "TAB SLASH",
+  title: {
+    default: "Tab Slash",
+    template: "%s | Tab Slash",
+  },
   description: "AI-powered bill splitting with a receipt aesthetic",
   icons: {
     icon: "/convex.svg",
