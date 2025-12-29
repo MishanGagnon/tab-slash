@@ -1041,19 +1041,31 @@ export default function ReceiptDetailPage() {
                     const isClaimedByUser = item.claimedBy?.some(
                       (c) => c.userId === user?._id,
                     );
+                    const numClaimants = item.claimedBy?.length || 0;
+                    const isUnclaimed = numClaimants === 0;
+                    const isClaimedByOthers = numClaimants > 0 && !isClaimedByUser;
 
                     return (
-                      <div key={item._id} className="flex flex-col gap-1">
+                      <div 
+                        key={item._id} 
+                        className={`flex flex-col gap-1 px-2 py-1.5 -mx-2 rounded-sm transition-all duration-300 ${
+                          isClaimedByUser 
+                            ? "bg-ink/[0.04] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.05)]" 
+                            : isClaimedByOthers 
+                            ? "bg-ink/[0.02]" 
+                            : "hover:bg-ink/[0.01]"
+                        }`}
+                      >
                         {/* Mobile: Stacked with indentation | Desktop: Grid */}
-                        <div className="flex flex-col sm:grid sm:grid-cols-[1.5rem_1fr_4.5rem_auto] sm:gap-2 sm:items-start text-xs uppercase">
+                        <div className="flex flex-col sm:grid sm:grid-cols-[4.5rem_1fr_4.5rem_auto] sm:gap-2 sm:items-start text-xs uppercase">
                           {/* Main Row: Qty, Name, Price (Mobile) / Grid Columns (Desktop) */}
                           <div className="flex justify-between items-start sm:contents">
-                            <div className="flex gap-3 min-w-0 sm:contents">
+                            <div className="flex gap-8 min-w-0 sm:contents">
                               <span className="flex-shrink-0 opacity-60 w-6 sm:order-1">
                                 {item.quantity}X
                               </span>
-                              <span className="font-bold truncate sm:order-2">
-                                {item.name}
+                              <span className={`font-bold truncate sm:order-2 transition-all duration-500 ${isClaimedByOthers && !isClaimedByUser ? "opacity-50" : "opacity-100"}`}>
+                                <span className="truncate">{item.name}</span>
                               </span>
                             </div>
                             <div className="flex flex-col items-end sm:contents">
@@ -1151,70 +1163,97 @@ export default function ReceiptDetailPage() {
                           </div>
 
                           {/* Sub-section: Modifiers, Actions, Claimants (Indented on Mobile) */}
-                          <div className="ml-9 flex flex-col gap-1 mt-0.5 sm:mt-0 sm:ml-0 sm:pl-0 sm:border-l-0 sm:contents">
-                            {/* Actions (Indented on Mobile | Column 4 on Desktop) */}
-                            <div className="flex items-center gap-1 sm:order-4">
-                              <button
-                                onClick={() =>
-                                  toggleClaim({ itemId: item._id })
-                                }
-                                className={`text-[10px] font-black tracking-tighter px-2 py-0.5 border-2 transition-all min-w-[75px] text-center ${
-                                  isClaimedByUser
-                                    ? "border-ink bg-ink text-paper hover:opacity-90"
-                                    : "border-dotted border-ink/40 text-ink/60 hover:border-solid hover:border-ink hover:text-ink"
-                                }`}
-                              >
-                                {isClaimedByUser ? "UNCLAIM" : "CLAIM"}
-                              </button>
-                              <button
-                                onClick={() =>
-                                  setSplittingItemId(
+                          <div className="flex flex-col gap-1 mt-0.5 sm:mt-0 sm:contents">
+                            {/* Actions Row (Mobile) | Grid Rows (Desktop) */}
+                            <div className="flex items-center sm:contents">
+                              {/* Badge: Under Qty (Col 1 on Desktop, Start of row on Mobile) */}
+                              <div className="w-14 sm:w-auto sm:col-start-1 sm:order-4 flex items-center min-h-[1.5rem]">
+                                {isClaimedByUser ? (
+                                  <span className="flex-shrink-0 text-[7px] sm:text-[8px] font-black bg-ink text-paper px-1.5 py-0.5 rounded-sm tracking-tighter animate-in fade-in zoom-in duration-300 shadow-[2px_2px_0px_rgba(0,0,0,0.15)]">
+                                    ✓ YOURS
+                                  </span>
+                                ) : isClaimedByOthers ? (
+                                  <span className="flex-shrink-0 text-[7px] sm:text-[8px] font-black border-2 border-ink/30 bg-ink/5 text-ink/70 px-1.5 py-0.5 rounded-sm tracking-tighter shadow-[1px_1px_0px_rgba(0,0,0,0.05)]">
+                                    CLAIMED
+                                  </span>
+                                ) : null}
+                              </div>
+
+                              {/* Actions: Indented on Mobile | Column 4 on Desktop */}
+                              <div className="flex items-center gap-1 sm:order-5 sm:col-start-4">
+                                <button
+                                  onClick={() =>
+                                    toggleClaim({ itemId: item._id })
+                                  }
+                                  className={`text-[10px] font-black tracking-tighter px-2 py-0.5 border-2 transition-all min-w-[75px] text-center ${
+                                    isClaimedByUser
+                                      ? "border-ink bg-ink text-paper hover:opacity-90"
+                                      : isClaimedByOthers
+                                      ? "border-ink/60 bg-ink/10 text-ink/80 hover:bg-ink/20 hover:border-ink/80"
+                                      : "border-dashed border-ink/40 text-ink/50 hover:border-solid hover:border-ink hover:text-ink hover:bg-ink/[0.02]"
+                                  }`}
+                                >
+                                  {isClaimedByUser
+                                    ? "UNCLAIM"
+                                    : isClaimedByOthers
+                                    ? `SHARE (+${numClaimants})`
+                                    : "CLAIM"}
+                                </button>
+                                <button
+                                  onClick={() =>
+                                    setSplittingItemId(
+                                      splittingItemId === item._id
+                                        ? null
+                                        : item._id,
+                                    )
+                                  }
+                                  className={`text-[10px] font-black tracking-tighter px-2 py-0.5 border-2 transition-all min-w-[75px] text-center ${
                                     splittingItemId === item._id
+                                      ? "border-ink bg-ink text-paper"
+                                      : "border-ink/40 text-ink/60 hover:border-ink hover:text-ink"
+                                  }`}
+                                >
+                                  {isHost &&
+                                  receipt.participants &&
+                                  receipt.participants.length > 1
+                                    ? "SPLIT / ASSIGN"
+                                    : "SPLIT"}
+                                </button>
+                              </div>
+                            </div>
+
+                            <div className="ml-14 sm:ml-0 sm:contents">
+                              {/* Modifiers (Indented on Mobile | Beneath Name on Desktop) */}
+                              {item.modifiers && item.modifiers.length > 0 && (
+                                <div className="flex flex-col gap-0.5 italic opacity-60 text-[10px] uppercase sm:col-start-2 sm:order-6">
+                                  {item.modifiers.map((mod, idx) => (
+                                    <div key={idx}>+ {mod.name}</div>
+                                  ))}
+                                </div>
+                              )}
+
+                              {/* Claimants (Reserved space to prevent jumping) */}
+                              <div
+                                onClick={() =>
+                                  setExpandedClaimantsItemId(
+                                    expandedClaimantsItemId === item._id
                                       ? null
                                       : item._id,
                                   )
                                 }
-                                className={`text-[10px] font-black tracking-tighter px-2 py-0.5 border-2 transition-all min-w-[75px] text-center ${
-                                  splittingItemId === item._id
-                                    ? "border-ink bg-ink text-paper"
-                                    : "border-ink/40 text-ink/60 hover:border-ink hover:text-ink"
+                                className={`flex gap-x-2 gap-y-0.5 mt-1 sm:col-start-2 sm:order-7 min-h-[1.25rem] cursor-pointer group px-1 rounded-sm transition-colors ${
+                                  expandedClaimantsItemId === item._id
+                                    ? "flex-wrap items-baseline"
+                                    : "flex-nowrap overflow-hidden items-center"
+                                } ${
+                                  numClaimants > 0
+                                    ? "hover:bg-ink/[0.05]"
+                                    : ""
                                 }`}
                               >
-                                {isHost &&
-                                receipt.participants &&
-                                receipt.participants.length > 1
-                                  ? "SPLIT / ASSIGN"
-                                  : "SPLIT"}
-                              </button>
-                            </div>
-
-                            {/* Modifiers (Indented on Mobile | Beneath Name on Desktop) */}
-                            {item.modifiers && item.modifiers.length > 0 && (
-                              <div className="flex flex-col gap-0.5 italic opacity-60 text-[10px] uppercase sm:col-start-2 sm:order-5">
-                                {item.modifiers.map((mod, idx) => (
-                                  <div key={idx}>+ {mod.name}</div>
-                                ))}
-                              </div>
-                            )}
-
-                            {/* Claimants (Reserved space to prevent jumping) */}
-                            <div
-                              onClick={() =>
-                                setExpandedClaimantsItemId(
-                                  expandedClaimantsItemId === item._id
-                                    ? null
-                                    : item._id,
-                                )
-                              }
-                              className={`flex gap-x-2 gap-y-0.5 mt-0.5 sm:col-start-2 sm:order-6 min-h-[1.25rem] cursor-pointer group ${
-                                expandedClaimantsItemId === item._id
-                                  ? "flex-wrap items-baseline"
-                                  : "flex-nowrap overflow-hidden items-center"
-                              }`}
-                            >
                               {item.claimedBy && item.claimedBy.length > 0 && (
                                 <>
-                                  <span className="text-[9px] uppercase font-bold opacity-30 whitespace-nowrap flex-shrink-0 leading-[1.25rem]">
+                                  <span className="text-[9px] uppercase font-bold opacity-50 whitespace-nowrap">
                                     Claimed by:
                                   </span>
                                   <div
@@ -1230,7 +1269,7 @@ export default function ReceiptDetailPage() {
                                     ).map((claim, idx, arr) => (
                                       <span
                                         key={idx}
-                                        className="text-[9px] uppercase font-bold opacity-60 whitespace-nowrap"
+                                        className="text-[9px] uppercase font-bold opacity-80 whitespace-nowrap"
                                       >
                                         {getFirstName(claim.userName)}
                                         {idx < arr.length - 1 ? "," : ""}
@@ -1254,10 +1293,11 @@ export default function ReceiptDetailPage() {
                             </div>
                           </div>
                         </div>
+                      </div>
 
                         {/* Split Selector UI (Always indented) */}
                         {splittingItemId === item._id && (
-                          <div className="mt-2 ml-9 p-4 border-2 border-dashed border-ink/20 flex flex-col gap-4 bg-paper/50 backdrop-blur-sm animate-in fade-in slide-in-from-top-2 duration-200">
+                          <div className="mt-2 ml-14 p-4 border-2 border-dashed border-ink/20 flex flex-col gap-4 bg-paper/50 backdrop-blur-sm animate-in fade-in slide-in-from-top-2 duration-200">
                             {/* Header Row: Label + Split All */}
                             <div className="flex justify-between items-center gap-4">
                               <p className="text-[9px] font-black uppercase tracking-[0.2em] opacity-40">
