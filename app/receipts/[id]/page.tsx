@@ -61,10 +61,7 @@ export default function ReceiptDetailPage() {
   const [isAddingGuest, setIsAddingGuest] = useState(false);
   const [newGuestName, setNewGuestName] = useState("");
   const [isParticipantsExpanded, setIsParticipantsExpanded] = useState(false);
-  const [isLedgerModalOpen, setIsLedgerModalOpen] = useState(false);
-  const [expandedLedgerUserId, setExpandedLedgerUserId] = useState<string | null>(
-    null,
-  );
+  const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false);
   const [isRemovingGuest, setIsRemovingGuest] = useState(false);
   const [guestToRemove, setGuestToRemove] = useState<{
     userId: Id<"users">;
@@ -1763,30 +1760,30 @@ export default function ReceiptDetailPage() {
                 </div>
               )}
 
-              {/* Participant Ledger (Host Only) */}
+              {/* Split Summary (Host Only) */}
               {isHost &&
                 receipt.participants &&
                 receipt.participants.length > 1 && (
                   <div className="mt-2">
                     <button
-                      onClick={() => setIsLedgerModalOpen(true)}
+                      onClick={() => setIsSummaryModalOpen(true)}
                       className="w-full border-2 border-ink py-3 text-xs font-bold uppercase tracking-[0.2em] text-center hover:bg-ink hover:text-paper transition-all"
                     >
-                      VIEW PARTICIPANT LEDGER
+                      VIEW SPLIT SUMMARY
                     </button>
                   </div>
                 )}
 
-              {/* Participant Ledger Modal */}
-              {isLedgerModalOpen && (
+              {/* Split Summary Modal */}
+              {isSummaryModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
                   <div className="w-full max-w-md receipt-paper jagged-top jagged-bottom p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200 overflow-y-auto max-h-[90vh]">
                     <div className="flex justify-between items-center border-b-2 border-ink/10 pb-3 mb-6">
                       <h3 className="text-xs font-black uppercase tracking-[0.2em]">
-                        Participant Ledger
+                        Split Summary
                       </h3>
                       <button
-                        onClick={() => setIsLedgerModalOpen(false)}
+                        onClick={() => setIsSummaryModalOpen(false)}
                         className="text-xs font-bold opacity-50 hover:opacity-100"
                       >
                         ✕
@@ -1796,11 +1793,10 @@ export default function ReceiptDetailPage() {
                     <div className="flex flex-col gap-2">
                       {receipt.participants.map((p) => {
                         const userTotal = calculateUserTotal(p.userId);
-                        const isExpanded = expandedLedgerUserId === p.userId;
                         return (
                           <div
                             key={p.userId}
-                            className="flex flex-col border-b border-ink/5 pb-2"
+                            className="flex flex-col border-b border-ink/5 pb-4 mb-2 last:mb-0 last:border-0"
                           >
                             <div className="flex justify-between items-center group gap-4 min-w-0">
                               <div className="flex flex-col min-w-0 flex-1">
@@ -1819,59 +1815,32 @@ export default function ReceiptDetailPage() {
                                 <span className="text-[11px] font-mono font-bold whitespace-nowrap">
                                   {formatCurrency(userTotal)}
                                 </span>
-                                <button
-                                  onClick={() =>
-                                    setExpandedLedgerUserId(
-                                      isExpanded ? null : p.userId,
-                                    )
-                                  }
-                                  className={`p-1 hover:bg-ink/5 transition-colors ${isExpanded ? "bg-ink/5" : ""}`}
-                                >
-                                  <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    width="14"
-                                    height="14"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="3"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    className="opacity-40"
-                                  >
-                                    <circle cx="12" cy="12" r="1" />
-                                    <circle cx="19" cy="12" r="1" />
-                                    <circle cx="5" cy="12" r="1" />
-                                  </svg>
-                                </button>
                               </div>
                             </div>
 
-                            {/* Collapsible Actions */}
-                            {isExpanded && (
-                              <div className="flex gap-2 mt-2 animate-in fade-in slide-in-from-top-1 duration-200">
-                                <Link
-                                  href={`/receipts/${receiptId}/${p.userId}`}
-                                  className="flex-1 text-center py-2.5 border-2 border-ink/20 text-[9px] font-bold uppercase hover:bg-ink hover:text-paper transition-all"
+                            {/* Actions */}
+                            <div className="flex gap-2 mt-3">
+                              <Link
+                                href={`/receipts/${receiptId}/${p.userId}`}
+                                className="flex-1 text-center py-2 border-2 border-ink/20 text-[9px] font-bold uppercase hover:bg-ink hover:text-paper transition-all"
+                              >
+                                VIEW RECEIPT
+                              </Link>
+                              {p.userId !== user?._id && (
+                                <button
+                                  onClick={() => {
+                                    const url = `${getBaseUrl()}/receipts/${receiptId}/${p.userId}`;
+                                    navigator.clipboard.writeText(url);
+                                    toast.success(
+                                      `Link for ${p.userName} copied!`,
+                                    );
+                                  }}
+                                  className="flex-1 text-center py-2 border-2 border-ink/20 text-[9px] font-bold uppercase hover:bg-ink hover:text-paper transition-all"
                                 >
-                                  VIEW RECEIPT
-                                </Link>
-                                {p.userId !== user?._id && (
-                                  <button
-                                    onClick={() => {
-                                      const url = `${getBaseUrl()}/receipts/${receiptId}/${p.userId}`;
-                                      navigator.clipboard.writeText(url);
-                                      toast.success(
-                                        `Link for ${p.userName} copied!`,
-                                      );
-                                    }}
-                                    className="flex-1 text-center py-2.5 border-2 border-ink/20 text-[9px] font-bold uppercase hover:bg-ink hover:text-paper transition-all"
-                                  >
-                                    COPY STATEMENT LINK
-                                  </button>
-                                )}
-                              </div>
-                            )}
+                                  COPY LINK
+                                </button>
+                              )}
+                            </div>
                           </div>
                         );
                       })}
@@ -1891,10 +1860,10 @@ export default function ReceiptDetailPage() {
                     </div>
 
                     <button
-                      onClick={() => setIsLedgerModalOpen(false)}
+                      onClick={() => setIsSummaryModalOpen(false)}
                       className="w-full mt-8 bg-ink text-paper text-[10px] font-black py-3 uppercase hover:opacity-90 transition-opacity"
                     >
-                      CLOSE LEDGER
+                      CLOSE SUMMARY
                     </button>
                   </div>
                 </div>

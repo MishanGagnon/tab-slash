@@ -37,7 +37,7 @@ export default function SignIn() {
               <div className="flex-1 border-t border-ink/20 border-dashed"></div>
             </div>
             <p className="text-[10px] uppercase opacity-60 leading-relaxed italic text-center">
-              Access the digital ledger to manage your receipts
+              Manage your receipts and shared splits
             </p>
           </div>
 
